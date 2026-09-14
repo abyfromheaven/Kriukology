@@ -175,5 +175,312 @@ Simulasi layar TV monitor lobi restoran untuk memanggil nomor antrean pelanggan.
     - _Logika Sistem:_ Backend Laravel akan memberikan validasi `required|image` pada form. Jika kosong, sistem menampilkan pesan error merah, atau secara otomatis memasang gambar _placeholder_ bawaan bernama `default-chicken.png` agar tampilan Kiosk pelanggan tidak pecah/rusak.
 ---
 # 4. Data Models & Database Schema (Struktur Data)
+## 1. Database Models (Entity Relationship)
+Karena proyek ini menggunakan SQLite, tipe data yang digunakan disesuaikan dengan tipe data primitif SQLite (`INTEGER`, `TEXT`). Relasi antar-tabel dikunci menggunakan konstanta _Foreign Key_ bawaan Eloquent ORM.
+
+```unset
++------------------+             +------------------+             +-------------------------+
+
+|     products     |             |      orders      |             |      order_details      |
++------------------+             +------------------+             +-------------------------+
+
+| id (PK)          |             | id (PK)          |             | id (PK)                 |
+| name (TEXT)      |             | queue_num (TEXT) |<----------- | order_id (FK)           |
+| price (INTEGER)  |             | total (INTEGER)  |             | product_id (FK) --------+
+| category (TEXT)  |             | type (TEXT)      |             | combo_details (TEXT)    | |
+| image (TEXT)     |             | table_num (TEXT) |             | quantity (INTEGER)      | |
++------------------+             | payment (TEXT)   |             | subtotal (INTEGER)      | |
+
+                                 | status (TEXT)    |             +-------------------------+ |
+                                 +------------------+                                         |
+                                          ^                                                   |
+                                          +---------------------------------------------------+
+```
+
+## A. Tabel: `products` (Master Data Menu)
+
+Menyimpan data item menu tunggal yang dapat dimasukkan ke dalam paket (_combo_).
+
+- `id` (INTEGER, Primary Key, Auto Increment)
+- `name` (TEXT) — Nama menu (Contoh: "Ayam Paha Bawah", "Nasi Putih", "Pepsi XL").
+- `price` (INTEGER) — Harga item jika dijual ala carte (jika di dalam paket, nilainya bisa di-set `0` untuk penambah komponen).
+- `category` (TEXT) — Pengelompokan komponen menu (`chicken`, `rice`, `drinks`, `addons`).
+- `image` (TEXT) — Jalur nama file gambar di dalam folder publik.
+
+## B. Tabel: `orders` (Transaksi Utama Kiosk)
+
+Mencatat data utama dari pesanan yang dibuat oleh pelanggan di mesin _kiosk_.
+
+- `id` (INTEGER, Primary Key, Auto Increment)
+- `queue_number` (TEXT) — Nomor antrean unik harian (Contoh: `PD-001`).
+- `total_price` (INTEGER) — Total harga akhir yang harus dibayar.
+- `order_type` (TEXT) — Pilihan tipe makan (`dine_in`, `take_away`).
+- `table_number` (TEXT, Nullable) — Nomor meja jika memilih opsi antar ke meja.
+- `payment_method` (TEXT) — Metode pembayaran (`QRIS`, `DEBIT`, `CASH`).
+- `status` (TEXT) — Status pelacakan untuk KDS (`pending`, `paid`, `completed`).
+- `timestamps` (`created_at` dan `updated_at`)
+
+## C. Tabel: `order_details` (Detail Transaksi / Item Paket - _One-to-Many_)
+
+Mencatat rincian item paket yang dibeli. Karena alur pemesanan menginginkan pemilihan komponen di dalam satu paket (pilih ayam, pilih minum), detail pilihan komponen tersebut disimpan dalam bentuk format JSON teks (`TEXT`) di kolom `combo_details`.
+
+- `id` (INTEGER, Primary Key, Auto Increment)
+- `order_id` (INTEGER, Foreign Key, `constrained()->onDelete('cascade')`) — Terhubung ke `orders.id`.
+- `product_id` (INTEGER, Foreign Key, `constrained()`) — Terhubung ke `products.id` (Induk paket yang dibeli).
+- `combo_details` (TEXT) — Format JSON data komponen yang dipilih user (Contoh: `{"chicken": "Paha Bawah", "drink": "Pepsi", "sauce": "Barbeque"}`).
+- `quantity` (INTEGER) — Jumlah paket sejenis yang dibeli.
+- `subtotal` (INTEGER) — Hasil dari (`harga_paket * quantity`).
 
 ---
+
+## 2. Folder Structure Plan (Laravel Standard)
+
+Berikut adalah peta struktur folder proyek PahaDada.id agar penempatan file komponen teks, grafis, multimedia, dan logika _backend_ konsisten:
+
+```text
+pahadada-kiosk/
+├── app/
+│   ├── Http/
+│   │   └── Controllers/
+│   │       ├── KioskController.php      # Mengontrol logika alur Client Kiosk (Fase 1-8)
+│   │       └── AdminController.php      # Mengontrol logika POS CRUD & KDS (Tab 1-3)
+│   └── Models/
+│       ├── Product.php                  # Model data menu
+│       ├── Order.php                    # Model transaksi utama
+│       └── OrderDetail.php              # Model detail item transaksi
+├── database/
+│   ├── database.sqlite                  # File database utama (SQLite)
+│   ├── migrations/                      # File skema pembuatan tabel
+│   └── seeders/
+│       └── ProductSeeder.php            # Data dummy awal menu PahaDada.id
+├── public/
+│   └── assets/
+│       ├── images/                      # Aset Grafis (Foto menu ayam, logo PahaDada.id)
+│       └── sounds/                      # Aset Multimedia Audio (tap.mp3, sukses.mp3, dingdong.mp3)
+├── resources/
+│   ├── css/
+│   │   └── app.css                      # Entrypoint directive Tailwind CSS
+│   └── views/
+│       ├── layouts/
+│       │   └── app.blade.php            # Master Layout (Simulasi Layar Kiosk Vertikal & Audio API)
+│       ├── kiosk/
+│       │   ├── index.blade.php          # SPA Kiosk View (Fase 1 hingga Fase 8 via Alpine.js)
+│       │   └── receipt_pdf.blade.php    # (Opsional) Layout struk jika ingin window.print()
+│       └── admin/
+│           └── dashboard.blade.php      # Tampilan Dashboard Admin 3 Tab (CRUD, KDS, Monitor)
+└── routes/
+    └── web.php                          # Endpoints / Routing Web
+```
+
+---
+
+## 3. API Routes & Server Actions
+
+Seluruh _routing_ menggunakan metode _Named Routes_ bawaan Laravel untuk mempermudah pemanggilan fungsi di dalam form HTML Blade.
+
+## A. Routing Sisi Client Kiosk (`routes/web.php`)
+
+|HTTP Method|URI|Named Route|Controller Action|Keterangan / Output|
+|---|---|---|---|---|
+|GET|`/`|`kiosk.index`|`KioskController@index`|Menampilkan antarmuka utama kios (Lockscreen hingga Checkout SPA).|
+|POST|`/checkout`|`kiosk.checkout`|`KioskController@checkout`|Server Action: Menerima payload data keranjang belanja JSON dari Alpine.js, melakukan validasi total harga, mengenerate nomor antrean, menyimpan ke database SQLite, lalu mengembalikan data ke halaman sukses (_Redirect with Sessions_).|
+
+## B. Routing Sisi Admin Dashboard POS & KDS (`routes/web.php`)
+
+|HTTP Method|URI|Named Route|Controller Action|Keterangan / Output|
+|---|---|---|---|---|
+|GET|`/admin`|`admin.dashboard`|`AdminController@index`|Menampilkan satu halaman Dashboard Utama berisi Tab CRUD, KDS, dan Monitor Antrean.|
+|POST|`/admin/products`|`admin.products.store`|`AdminController@storeProduct`|Server Action: Memproses input form penambahan menu baru beserta proses _upload_ gambar ke folder publik.|
+|DELETE|`/admin/products/{id}`|`admin.products.destroy`|`AdminController@deleteProduct`|Server Action: Menghapus menu produk secara permanen dari database SQLite berdasarkan ID.|
+|PATCH|`/admin/orders/{id}/pay`|`admin.orders.pay`|`AdminController@confirmPayment`|Server Action: Khusus metode _Cash_, mengubah kolom `status` pesanan dari `pending` menjadi `paid`.|
+|PATCH|`/admin/orders/{id}/complete`|`admin.orders.complete`|`AdminController@completeOrder`|Server Action: Mengubah status transaksi menjadi `completed` jika makanan sudah diambil pelanggan.|
+
+---
+# 5. Functional Requirements & Feature Breakdown
+## Modul 1: Client-Side Kiosk Application (SPA via Alpine.js)
+
+## Modul 1A: Lockscreen Mode (Screensaver & Video Loop)
+
+- User Story: "Sebagai pelanggan restoran, saya ingin melihat tampilan visual promosi yang bergerak saat mesin tidak digunakan, sehingga saya tertarik untuk mendekat dan menekan tombol untuk mulai memesan makanan."
+- UI/UX Component Requirements:
+    
+    - _Container_ utama vertikal mensimulasikan layar kios asli (`max-w-md h-[920px]`).
+    - Komponen slider gambar poster promosi dengan efek transisi otomatis.
+    - Komponen video promosi ayam krispi yang di-_embed_ dari YouTube menggunakan tag `<iframe>` dengan parameter `autoplay=1&mute=1&loop=1`.
+    - Tombol besar _"MULAI PESANAN / ORDER HERE"_ dengan efek animasi denyut (_pulse_) Tailwind CSS.
+    
+- Logic & State Management:
+    
+    - Menggunakan state Alpine.js `step: 'lockscreen'`.
+    - Jika tombol _"MULAI PESANAN"_ diklik, panggil fungsi `playTap()` untuk memicu audio `tap.mp3`, lalu ubah status `step` menjadi `'preference'`.
+    - _Idle Timeout Logic:_ Jika aplikasi berada di fase selain lockscreen dan tidak menerima interaksi sentuhan/klik selama 60 detik, hapus seluruh isi keranjang (_clear session/state_) dan ubah kembali status `step` ke `'lockscreen'`.
+    
+- Acceptance Criteria:
+    
+    - Video YouTube otomatis berputar berulang-ulang tanpa suara (_muted autoplay_) saat halaman pertama kali dimuat.
+    - Tombol mulai responsif dan berhasil memindahkan layar ke fase berikutnya tanpa memuat ulang halaman (_zero page reload_).
+    
+
+## Modul 1B: Pre-Ordering Preference (Bahasa & Opsi Makan)
+
+- User Story: "Sebagai pelanggan restoran, saya ingin memilih bahasa pengantar dan menentukan apakah saya ingin makan di tempat atau membawa pulang makanan sebelum masuk ke menu utama."
+- UI/UX Component Requirements:
+    
+    - Pilihan bahasa berbentuk kartu/tombol bergambar bendera: Indonesia dan English.
+    - Pilihan tipe pesanan berbentuk dua tombol visual besar: _Dine In_ (Makan di Sini) dan _Take Away_ (Bawa Pulang).
+    - Tombol _"Lanjut"_ di bagian bawah layar.
+    
+- Logic & State Management:
+    
+    - Menggunakan variabel state `language: 'id'` dan `orderType: 'dine-in'`.
+    - Jika tombol bahasa/tipe order diklik, perbarui nilai variabel state yang bersangkutan dan picu suara klik.
+    - Jika tombol _"Lanjut"_ diklik, ubah status `step` menjadi `'main-menu'`.
+    
+- Acceptance Criteria:
+    
+    - Sistem berhasil mengunci preferensi bahasa dan tipe makan pengguna ke dalam memori variabel Alpine.js sebelum membuka halaman menu utama.
+    
+
+## Modul 1C: Main Menu & Package Customization Modal
+
+- User Story: "Sebagai pelanggan restoran, saya ingin melihat menu rekomendasi di urutan teratas, memilih jenis paket makanan, mengustomisasi isian lauk/minumannya, serta memantau ringkasan harga keranjang di bagian bawah layar."
+- UI/UX Component Requirements:
+    
+    - _Sidebar_ navigasi vertikal di sisi kiri untuk kategori menu (Rekomendasi di posisi paling atas, disusul Paket Krispi, Ala Carte, Minuman, Cemilan).
+    - _Grid layout_ di sisi kanan untuk menampilkan kartu produk (Gambar, Nama Paket, Harga, Tombol Tambah).
+    - _Pop-up Modal_ interaktif dengan animasi transisi membesar halus saat kartu paket diklik. Di dalam modal terdapat opsi kustomisasi bertahap (Langkah 1: Pilih Potongan Ayam ➔ Langkah 2: Pilih Varian Minuman).
+    - Tombol "Batalkan" dan "Tambah ke Keranjang" di dalam modal.
+    - _Floating Cart Bar_ di bagian bawah layar utama yang menampilkan jumlah item, total harga akumulasi, dan tombol _"Lihat Pesanan Saya"_.
+    - Tombol _"Reset Pesanan"_ (Mulai dari Awal) yang selalu hadir di pojok layar menu utama.
+    
+- Logic & State Management:
+    
+    - Variabel state pendukung: `cart: []`, `currentPackage: null`, `isModalOpen: false`.
+    - Jika kartu paket diklik, set data ke `currentPackage`, ubah `isModalOpen = true`, dan picu `playTap()`.
+    - Di dalam modal, komponen isian paket dipilih menggunakan metode _data-binding_ objek ke dalam array keranjang.
+    - Jika tombol _"Tambah ke Keranjang"_ diklik, validasi kelengkapan isian komponen paket, masukkan objek baru ke dalam array `cart`, picu animasi _splash pop-up_ sekilas bertuliskan "Menu Ditambahkan!", ubah `isModalOpen = false`, dan perbarui kalkulasi total harga di _floating bar_.
+    - Jika tombol _"Reset Pesanan"_ diklik, kosongkan array `cart`, kembalikan `step = 'lockscreen'`.
+    
+- Acceptance Criteria:
+    
+    - Menu kategori rekomendasi wajib terbuka secara otomatis saat pertama kali masuk ke menu utama.
+    - Pelanggan tidak bisa menambahkan paket ke keranjang sebelum menyelesaikan langkah kustomisasi isian lauk dan minuman di dalam modal.
+    - Nilai nominal harga dan jumlah item di _floating bar_ bawah ter-update secara _real-time_ setiap kali item ditambahkan.
+    
+
+## Modul 1D: Cart Review & Delivery Logistics
+
+- User Story: "Sebagai pelanggan restoran, saya ingin memeriksa kembali detail seluruh pesanan saya, mengubah jumlah porsi, menentukan lokasi meja makan saya jika memilih dine-in, sebelum lanjut memilih metode pembayaran."
+- UI/UX Component Requirements:
+    
+    - Halaman rekap berisi daftar belanja (Nama paket, detail kustomisasi isi lauk, harga satuan, tombol kuantitas `+` dan `-`, serta subtotal harga).
+    - Tombol _"Tambah Pesanan"_ (kembali ke menu utama) dan _"Selesaikan Pesanan"_ di bagian bawah.
+    - Halaman logistik (diakses setelah klik selesaikan pesanan): Opsi tombol besar _"Antar ke Meja"_ atau _"Ambil di Kasir"_.
+    - Komponen _custom on-screen keyboard_ numerik (keyboard angka visual buatan sendiri di layar) yang muncul otomatis hanya jika opsi _"Antar ke Meja"_ dipilih untuk menginput nomor meja.
+    
+- Logic & State Management:
+    
+    - Variabel state pendukung: `deliveryMethod: ''`, `tableNumber: ''`.
+    - Tombol kuantitas `+` dan `-` akan langsung menambah atau mengurangi nilai objek di array `cart` dan mengalkulasi ulang total harga belanjaan secara otomatis.
+    - Jika opsi _"Antar ke Meja"_ dipilih, tampilkan area input nomor meja beserta keyboard numeriknya. Setiap ketukan angka di keyboard visual akan mengisi nilai variabel `tableNumber`.
+    
+- Acceptance Criteria:
+    
+    - Jika pengguna memilih opsi _"Antar ke Meja"_, tombol _"Lanjut ke Pembayaran"_ wajib terkunci (_disabled_) selama kolom nomor meja kosong atau bernilai `0`.
+    
+
+## Modul 1E: Interactive Payment & On-Screen Receipt
+
+- User Story: "Sebagai pelanggan restoran, saya ingin memilih opsi pembayaran mockup dan melihat struk digital langsung di layar laptop setelah pembayaran sukses tanpa memerlukan mesin print fisik asli."
+- UI/UX Component Requirements:
+    
+    - Halaman pilihan metode bayar: QRIS, E-Wallet, M-Banking, Debit Card, dan Tunai di Kasir.
+    - Area visual interaktif sesuai metode yang dipilih (Contoh: Menampilkan gambar QR Code statis tiruan PahaDada.id berlabel nominal total harga belanja untuk opsi QRIS, atau animasi mesin gesek EDC untuk opsi Debit).
+    - Tombol rahasia berukuran kecil/minimalis berwarna hijau di pojok bawah bertuliskan "Simulasi Sukses" (sebagai pemicu aksi backend saat kamu demo sidang).
+    - _Splash Screen Thank You_ berwarna merah penuh dengan teks "Terima Kasih, Pesanan Anda Sedang Diproses".
+    - Komponen visual Struk Belanja Digital (_On-Screen Receipt_) rapi yang muncul di tengah layar setelah splash screen (memuat Nomor Antrean besar harian, Detail Item Paket, Nomor Meja/Keterangan Ambil di Kasir, dan Status Pembayaran).
+    
+- Logic & State Management:
+    
+    - Variabel state pendukung: `paymentMethod: ''`.
+    - Ketika tombol metode pembayaran diklik, tampilkan visual mockup instruksinya.
+    - Jika tombol "Simulasi Sukses" diklik, kirim seluruh data payload (keranjang belanja JSON, tipe makan, nomor meja, total harga, metode pembayaran) menggunakan metode `POST` via Axios/Fetch/Form HTML ke endpoint backend Laravel `/checkout`.
+    - Setelah backend merespon sukses dan mengirimkan data balik nomor antrean harian, mainkan audio `sukses.mp3`, ubah status `step = 'success'`, tampilkan splash screen terima kasih selama 3 detik, lalu beralih menampilkan struk digital di layar.
+    - Set _timer automated reset_ selama 15 detik pada tampilan struk akhir untuk membersihkan seluruh data state dan mengembalikan sistem secara otomatis ke halaman `step = 'lockscreen'`.
+    
+- Acceptance Criteria:
+    
+    - Transaksi berhasil tersimpan ke database lokal SQLite dan status pembayaran tercatat otomatis sebagai `paid` (lunas) untuk non-tunai, atau `pending` jika memilih metode Tunai di Kasir.
+    - Nomor antrean berurutan secara otomatis dan tampil jelas di struk digital layar monitor.
+    
+
+---
+
+## Modul 2: Back-Office Merchant Dashboard & KDS (Admin-Side)
+
+## Modul 2: Admin Dashboard One-Page (3-Tab Layout)
+
+- User Story: "Sebagai pengelola merchant PahaDada.id, saya ingin mengelola katalog makanan, memantau pesanan masuk untuk dapur, serta memperbarui antrean di satu halaman terpusat yang praktis."
+- UI/UX Component Requirements:
+    
+    - Bilah navigasi atas (_Header Admin_) menampilkan nama brand PahaDada.id - Back Office Control.
+    - Bilah navigasi tab horizontal menggunakan utilitas Tailwind CSS untuk berpindah antar-tiga tampilan utama: [Tab 1: Manajemen Produk], [Tab 2: Kitchen Display System (KDS)], dan [Tab 3: Monitor Antrean Lobi].
+    
+
+## Spesifikasi Tab 1: Manajemen Produk (Product CRUD)
+
+- Komponen Visual: Tabel data (Kolom: Foto, Nama Menu, Kategori, Harga, Aksi). Tombol _"Tambah Produk Baru"_ di atas tabel yang memicu munculnya jendela formulir modal.
+- Logika Sistem: Menggunakan fungsi standar Laravel CRUD Controller. Form wajib memiliki validasi backend (`name` required, `price` numeric, `image` image mimes jpeg,png). Tersedia tombol aksi _"Hapus"_ berbasis metode HTTP `DELETE` dengan konfirmasi alert.
+- Acceptance Criteria: Produk yang ditambahkan atau dihapus oleh admin di halaman ini langsung mengubah isi database SQLite dan merubah tampilan pilihan menu di sisi Kiosk secara _real-time_ saat diakses kembali.
+
+## Spesifikasi Tab 2: Kitchen Display System (KDS - Order Tracker)
+
+- Komponen Visual: Grid kartu pesanan masuk yang diurutkan berdasarkan waktu (Pesanan terlama di posisi paling atas kiri). Setiap kartu pesanan memuat: Nomor Antrean besar, Tipe Makan, Detail Komponen Paket yang dibeli (baca data JSON), Status Meja/Ambil Kasir, dan Tombol Aksi Konstatus.
+- Logika Sistem:
+    
+    - Jika pesanan masuk memilih metode Tunai, tampilkan tombol kuning _"Konfirmasi Bayar di Kasir"_. Jika diklik, jalankan server action `PATCH` untuk merubah nilai database `status = 'paid'`.
+    - Jika pesanan sudah berstatus lunas (`paid`), tampilkan tombol hijau _"Selesaikan Masakan & Serahkan"_. Jika diklik, jalankan server action `PATCH` untuk merubah database `status = 'completed'`. Pesanan yang selesai otomatis hilang dari daftar pengerjaan aktif dapur.
+    
+- Acceptance Criteria: Dapur dapat melacak dengan detail modifikasi varian menu paket yang dipilih pelanggan dan merubah status urutan proses masak secara valid.
+
+## Spesifikasi Tab 3: Monitor Antrean Pelanggan (Lobi Restoran)
+
+- Komponen Visual: Tampilan layar lobi yang dibagi menjadi dua kolom vertikal besar. Kolom Kiri: "SEDANG DIPROSES" (menampilkan daftar nomor antrean berstatus `paid`). Kolom Kanan: "SILAKAN AMBIL" (menampilkan daftar nomor antrean berstatus `completed`). Di bagian bawah terdapat tombol besar _"PANGGIL NOMOR ANTREAN TERAKHIR"_.
+- Logika Sistem: Mengambil data relasional dari tabel pesanan harian. Ketika tombol panggilan antrean diklik oleh admin, panggil fungsi pemutar efek suara audio multimedia `dingdong.mp3`.
+- Acceptance Criteria: Tampilan monitor antrean sinkron dengan perpindahan status pengerjaan yang dilakukan oleh staf dapur di Tab 2.
+---
+# 6. Non-Functional Requirements & System Policies
+
+## 1. Performance (Batasan & Standar Kecepatan)
+
+- Zero-Reload Reaktivitas Kiosk: Seluruh perpindahan halaman operasional dari Fase 1 hingga Fase 8 di sisi _Self-Ordering Kiosk_ wajib menggunakan manipulasi DOM lokal via Alpine.js tanpa memicu muat ulang halaman (_page reload_). Respon transisi antarmuka harus berada di bawah 100 milidetik (ms) untuk mensimulasikan mesin kasir instan.
+- Optimasi Aset Multimedia: File audio efek suara (`tap.mp3`, `sukses.mp3`) wajib dikompresi di bawah 300 KB dengan atribut `preload="auto"` agar tidak ada latensi suara saat tombol diklik. Video YouTube di halaman depan diatur wajib menggunakan parameter `mute=1` agar kebijakan _browser modern_ mengizinkan fungsi _autoplay_ berjalan instan tanpa tersendat.
+- Tailwind Production Compile Score: Proses _compilation_ Tailwind CSS wajib menggunakan Vite Bundler (NPM) dengan fitur _purging_ aktif. Ukuran file _output_ CSS akhir tidak boleh melebihi 50 KB setelah di-bundle, demi memastikan skor Google Lighthouse Performance minimal 90 untuk aspek kecepatan muat halaman (_Largest Contentful Paint_).
+
+## 2. Security (Penanganan Data Sensitif & Integritas)
+
+- Database Portability & Serverless Isolation: Menggunakan database lokal SQLite yang diisolasi di dalam folder proyek privat. Koneksi database dikunci secara aman menggunakan _environment variables_ di dalam file `.env`. Jalur file `.sqlite` dilarang keras ditulis secara _hardcoded_ di dalam kode program.
+- Form & Transaction Protection: Setiap transaksi pengiriman data keranjang belanja dan formulir CRUD Admin wajib dibungkus oleh directive `@csrf` bawaan Laravel untuk mencegah serangan _Cross-Site Request Forgery_.
+- Server-Side Price Validation: Sistem dilarang mempercayai kalkulasi total harga yang dikirim oleh sisi klien (karena rawan manipulasi _inspect element_). Backend Laravel wajib melakukan perhitungan ulang total belanjaan dengan mencocokkan ID produk ke database SQLite internal sebelum transaksi disimpan ke dalam tabel transaksi.
+
+## 3. Error Handling Policy (Kebijakan Penanganan Eror)
+
+- User-Friendly Client Fallback: Jika pengguna menembak URL halaman pembayaran (`/checkout`) secara langsung dalam kondisi keranjang belanja kosong, backend Laravel harus menangkap kondisi tersebut dan melakukan _redirect_ paksa ke halaman menu utama disertai _Flash Session Alert_ berwarna merah di atas layar.
+- Dynamic Asset Placeholder: Jika pada Dashboard Admin (`/admin`) petugas mengunggah menu makanan baru tetapi gagal mengunggah gambar atau file gambar rusak, sistem _backend_ tidak boleh merusak layout halaman depan. Sistem wajib secara otomatis menampilkan gambar cadangan bawaan (_fallback placeholder image_) bernama `default-chicken.png`.
+- Validation Fail Capture: Semua kegagalan input pada form penambahan produk admin harus ditangkap menggunakan objek `$errors` bawaan Laravel. Eror wajib ditampilkan secara spesifik di bawah masing-masing kolom input dengan teks instruksi yang jelas (Contoh: _"Harga harus berupa angka!"_), bukan memunculkan halaman eror bawaan PHP (_Whoops/Stack Trace_) yang membingungkan penguji.
+---
+# 7. AI Development Instructions & Clean Code Standards
+
+## 1. Prinsip Clean Code yang Wajib Diterapkan
+
+- Meaningful Names (Nama yang Punya Arti): Nama fungsi dan variabel harus langsung menjelaskan tujuannya tanpa perlu ditebak-tebak, menggunakan bahasa Indonesia yang ramah sidang.
+    
+    - _Sesuai Clean Code:_ Gunakan `hitungTotalBelanja()` daripada hanya `total()` atau `xyz()`.
+    
+- Single Responsibility Principle (Satu Fungsi, Satu Tugas): Sebuah fungsi hanya boleh melakukan satu tugas spesifik. Jangan menumpuk logika pengecekan, kalkulasi, dan simpan data dalam satu fungsi raksasa. Pecah menjadi fungsi-fungsi kecil agar kodenya bersih dan mudah dijelaskan baris per baris ke Kakom.
+- Don't Repeat Yourself (DRY): Hindari menulis kode atau logika yang sama berulang kali. Jika ada logika yang dipakai di beberapa tempat (misal: memformat angka ke Rupiah), buatkan satu fungsi khusus untuk dipanggil berulang-ulang.
+
+## 2. Standar Komentar Kode (Commenting Rules)
+
+- Komentar Penjelas Alasan (Why, Not What): Clean code menyarankan komentar fokus menjelaskan _kenapa_ kode itu ditulis, bukan menjelaskan hal yang sudah jelas tertulis di kode.
+- Bahasa Indonesia Santai: Komentar wajib ditulis menggunakan bahasa sehari-hari anak RPL SMK agar bisa kamu jadikan bahan contekan/hafalan langsung saat kodenya dibedah oleh penguji.
