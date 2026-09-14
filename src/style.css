@@ -1,0 +1,23 @@
+@import 'animate.css';
+@import '@fortawesome/fontawesome-free/css/all.min.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color: #2a2424; background: #f6f1e8; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+* { box-sizing: border-box; }
+body { min-width: 320px; margin: 0; }
+[x-cloak] { display: none !important; }
+.display { font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif; letter-spacing: .035em; }
+.screen-shell { width: min(100%, 470px); height: min(900px, calc(100vh - 42px)); min-height: 650px; box-shadow: 0 26px 80px #3a171933; }
+.perforated { background-image: radial-gradient(circle at 0 0, transparent 4px, #f6f1e8 4.5px), radial-gradient(circle at 100% 0, transparent 4px, #f6f1e8 4.5px); background-size: 100% 14px; background-position: 0 7px; }
+.ticket-edge { background-image: radial-gradient(circle at 0 0, transparent 5px, #f7f1e8 5.5px), radial-gradient(circle at 100% 0, transparent 5px, #f7f1e8 5.5px); background-size: 100% 15px; background-position: 0 7px; }
+.food-orb { background: radial-gradient(circle at 30% 26%, #ffd66e 0 13%, #ffab27 14% 42%, #d92a29 43% 65%, #8b2020 66%); }
+.mini-food { background: radial-gradient(circle at 35% 28%, #ffe28d, #ee8d25 42%, #b92a28 70%); }
+.grid-noise { background-image: linear-gradient(#ffffff0d 1px, transparent 1px), linear-gradient(90deg, #ffffff0d 1px, transparent 1px); background-size: 24px 24px; }
+.scroll-clean::-webkit-scrollbar { display: none; }
+.scroll-clean { -ms-overflow-style: none; scrollbar-width: none; }
+button { -webkit-tap-highlight-color: transparent; }
+button:focus-visible { outline: 3px solid #f5bd27; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
