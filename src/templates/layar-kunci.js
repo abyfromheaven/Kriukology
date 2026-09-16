@@ -22,7 +22,7 @@ const templateLayarKunci = `
     <div class="font-black text-2xl tracking-tight">
       Paha<span class="text-[#f5bd27]">Dada</span><span class="text-sm">.id</span>
     </div>
-    <span class="text-[10px] font-bold tracking-[.2em] border border-white/40 rounded-full px-3 py-1">SELF ORDER</span>
+    <span class="text-[10px] font-bold tracking-[.2em] border border-white/40 rounded-full px-3 py-1">PESAN MANDIRI</span>
   </header>
 
   <!-- Konten utama: judul, deskripsi, dan ilustrasi -->
@@ -47,7 +47,7 @@ const templateLayarKunci = `
       <i class="fa-solid fa-hand-pointer mr-2"></i>
       <span data-text="order"></span>
     </button>
-    <p class="mt-3 text-center text-[10px] tracking-[.12em] text-white/65">TAP TO SKIP THE QUEUE</p>
+    <p class="mt-3 text-center text-[10px] tracking-[.12em] text-white/65">KETUK UNTUK LEWATI ANTREAN</p>
   </div>
 
 </div>

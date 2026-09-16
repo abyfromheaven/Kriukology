@@ -26,7 +26,7 @@ const templateLayarMenu = `
 
   <!-- Judul Section -->
   <div class="px-5 pt-5">
-    <p class="text-xs font-bold tracking-[.18em] text-[#d51f32]">02 — PICK YOUR FAVE</p>
+    <p class="text-xs font-bold tracking-[.18em] text-[#d51f32]">02 — PILIH MENU</p>
     <h2 class="display text-3xl mt-1" data-text="menu"></h2>
   </div>
 
@@ -66,12 +66,12 @@ const templateLayarMenu = `
   <div data-bind="modalOverlay" style="display:none"
     class="absolute inset-0 z-30 bg-black/45 flex items-end" data-action="tutupModal">
 
-    <div class="bg-[#f7f1e8] w-full rounded-t-[2rem] p-6 animate__animated animate__slideInUp" onclick="event.stopPropagation()">
+    <div class="bg-[#f7f1e8] w-full rounded-t-[2rem] p-6 animate__animated animate__slideInUp" data-action="hentiPenyebaran">
 
       <!-- Header modal -->
       <div class="flex justify-between">
         <div>
-          <p class="text-xs text-[#d51f32] font-bold tracking-widest">BUILD YOUR BOX</p>
+          <p class="text-xs text-[#d51f32] font-bold tracking-widest">BANGUN PAKETMU</p>
           <h3 class="display text-3xl" data-bind="modalNama"></h3>
         </div>
         <button data-action="tutupModal" class="h-9 w-9 rounded-full bg-stone-200">

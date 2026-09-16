@@ -15,7 +15,7 @@ const templateKeranjang = `
       <i class="fa-solid fa-arrow-left mr-2"></i>
       <span data-text="back"></span>
     </button>
-    <p class="text-xs font-bold tracking-[.18em] text-[#d51f32] mt-5">03 — REVIEW TICKET</p>
+    <p class="text-xs font-bold tracking-[.18em] text-[#d51f32] mt-5">03 — REVIEW PESANAN</p>
     <h2 class="display text-4xl mt-1" data-text="cart"></h2>
   </header>
 

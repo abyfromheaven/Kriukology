@@ -16,12 +16,12 @@ const templatePengiriman = `
   </button>
 
   <!-- Judul section -->
-  <p class="text-xs font-bold tracking-[.18em] text-[#d51f32] mt-8">04 — DELIVERY</p>
+  <p class="text-xs font-bold tracking-[.18em] text-[#d51f32] mt-8">04 — PENGIRIMAN</p>
   <h2 class="display text-4xl mt-1 max-w-xs" data-text="delivery"></h2>
 
   <!-- Pilihan metode pengiriman -->
   <div class="space-y-3 mt-7">
-    <button data-action="setMetodePengiriman:meja" data-active-metode="meja"
+    <button data-action="setMetodePengiriman:meja" data-aktif-metode="meja"
       class="w-full rounded-2xl p-5 flex gap-4 text-left">
       <i class="fa-solid fa-utensils text-xl"></i>
       <span>
@@ -30,12 +30,12 @@ const templatePengiriman = `
       </span>
     </button>
 
-    <button data-action="setMetodePengiriman:kasir" data-active-metode="kasir"
+    <button data-action="setMetodePengiriman:kasir" data-aktif-metode="kasir"
       class="w-full rounded-2xl p-5 flex gap-4 text-left">
       <i class="fa-solid fa-store text-xl"></i>
       <span>
         <b class="block" data-text="counter"></b>
-        <small class="opacity-70">Pick-up zone</small>
+        <small class="opacity-70">Ambil di kasir</small>
       </span>
     </button>
   </div>

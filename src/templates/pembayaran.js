@@ -16,7 +16,7 @@ const templatePembayaran = `
   </button>
 
   <!-- Judul section -->
-  <p class="text-xs font-bold tracking-[.18em] text-[#d51f32] mt-8">05 — PAYMENT</p>
+  <p class="text-xs font-bold tracking-[.18em] text-[#d51f32] mt-8">05 — PEMBAYARAN</p>
   <h2 class="display text-4xl mt-1" data-text="payment"></h2>
 
   <!-- Grid pilihan metode pembayaran -->
