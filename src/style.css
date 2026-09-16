@@ -9,7 +9,7 @@
 * { box-sizing: border-box; }
 body { min-width: 320px; margin: 0; }
 .display { font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif; letter-spacing: .035em; }
-.screen-shell { width: min(100%, 470px); height: min(900px, calc(100vh - 42px)); min-height: 650px; box-shadow: 0 26px 80px #3a171933; }
+.screen-shell { width: min(100%, 470px); aspect-ratio: 9 / 16; max-height: calc(100vh - 42px); box-shadow: 0 26px 80px #3a171933; }
 .perforated { background-image: radial-gradient(circle at 0 0, transparent 4px, #f6f1e8 4.5px), radial-gradient(circle at 100% 0, transparent 4px, #f6f1e8 4.5px); background-size: 100% 14px; background-position: 0 7px; }
 .ticket-edge { background-image: radial-gradient(circle at 0 0, transparent 5px, #f7f1e8 5.5px), radial-gradient(circle at 100% 0, transparent 5px, #f7f1e8 5.5px); background-size: 100% 15px; background-position: 0 7px; }
 .food-orb { background: radial-gradient(circle at 30% 26%, #ffd66e 0 13%, #ffab27 14% 42%, #d92a29 43% 65%, #8b2020 66%); }
