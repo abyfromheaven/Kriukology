@@ -18,35 +18,48 @@
     3. **Manajemen Restoran Lokal (Dunia Nyata):** Sebagai solusi digitalisasi bagi pemilik usaha kuliner cepat saji lokal yang ingin meningkatkan efisiensi operasional tanpa risiko kebocoran data sensitif.
 ---
 # 2. Tech Stack & Architecture Constraints (Batasan Teknologi)
-### 1. Frontend
-1. **State Management & Interaktivitas Keranjang: Alpine.js**
-	- **Apa itu?** Alpine.js adalah _framework_ JavaScript super ringan yang sering dijuluki "Tailwind-nya JavaScript". Ukurannya kecil dan kodenya langsung ditulis di dalam tag HTML (mirip Tailwind).
-	- **Alasan:** Jika menggunakan JavaScript murni (Vanilla JS) untuk fitur keranjang belanja (tambah ayam, kurang ayam, hitung total harga secara _real-time_), kodenya akan panjang dan rawan _error_ DOM. Jika menggunakan Vue.js atau React, waktu belajar kamu tidak akan cukup dalam 3 hari. **Alpine.js adalah jalan tengah yang sempurna.**
-2. **Animasi & Desain Grafis: Tailwind Transitions + Animate.css**
-	- **Alasan:** Kriteria tugas meminta desain dan animasi yang menarik. Cukup andalkan _class_ transisi bawaan Tailwind untuk efek kartu makanan yang membesar halus saat disentuh.
-	- **Tambahan:** Kamu bisa menyelipkan _library_ **Animate.css** khusus untuk animasi _pop-up_ modal pembayaran agar terlihat sangat mulus dan interaktif.
-3. **Audio & Video Multimedia: HTML5 Audio API & Youtube Iframe API**
-	- **Alasan:** Untuk memicu _sound effect_ "Tap" saat memilih menu dan suara "Sukses" saat selesai bayar, HTML5 Audio API bawaan _browser_ sudah lebih dari cukup dan hanya butuh 2 baris kode JavaScript. Untuk video promosi di halaman depan, kita cukup menggunakan `<iframe>` standar YouTube yang diatur `autoplay=1` dan `mute=1`.
-4. **CSS Framework: Tailwind CSS (via package manager)**
-	- **Optimasi Performa Industri (Production Ready):** Penggunaan NPM memungkinkan proses _purging_ otomatis oleh Vite. Sistem hanya akan mengompilasi _utility classes_ yang benar-benar digunakan, sehingga ukuran file CSS akhir menjadi sangat kecil dan ringan untuk performa mesin Kiosk.
-    - **Kemudahan Manajemen Dependensi:** Mempermudah integrasi dengan _library_ frontend modern lainnya (seperti Alpine.js atau Animate.css) dalam satu ekosistem _build tools_ yang rapi dan terstruktur.
-    - **Fleksibilitas Kustomisasi:** Membuka akses penuh ke file `tailwind.config.js` untuk mempermudah pengaturan tema lokal, warna khas _branding_ **PahaDada.id**, serta konfigurasi animasi kustom tanpa menumpuk kode di file HTML.
+## 1. Komponen Utama Tech Stack PahaDada.id
+
+Aplikasi dirancang menggunakan arsitektur Hybrid Core Web Standards, menggabungkan ketangguhan _framework_ di sisi _backend_ dengan kesederhanaan bahasa murni (_native_) di sisi _frontend_ [local].
+
+- Backend Framework: PHP 8.2+ / 9.x dengan Laravel 11 [local]
+- Frontend UI/CSS: Tailwind CSS v3/v4 (Di-compile menggunakan NPM / Vite Bundler) [local]
+- Frontend Scripting: Vanilla JavaScript Murni (Tanpa _Framework/Library_ Frontend) [local]
+- Database Management: SQLite (Serverless Embedded Database) [local]
+- Payment Backend Integration: Pure Native Laravel State-Driven Logic (100% Bebas API _Payment Gateway_ Pihak Ketiga)
 
 ---
-### 2. Backend
-**PHP + Laravel**
-- **Alasan Pemilihan & Keunggulan:**
-    1. **Arsitektur Standar Industri (Enterprise Ready):** Menggunakan pola MVC yang memisahkan logika bisnis (_Controller_), representasi data (_Model_), dan antarmuka visual (_View_). Membuat kode terstruktur rapi dan mudah dipahami saat proses pembedahan kode oleh penguji.
-    2. **Keamanan Berlapis Bawaan (Built-in Security):** Menyediakan perlindungan otomatis terhadap celah keamanan web kritis seperti _Cross-Site Request Forgery_ (melalui token `@csrf` pada form) dan enkripsi data sensitif secara instan.
-    3. **Efisiensi Waktu Pengembangan (Rapid Development):** Memiliki fitur bawaan yang lengkap seperti _Form Validation_, _Routing_ yang bersih, serta integrasi _native_ dengan SQLite, memungkinkan seluruh logika CRUD _back-office_ dan pemesanan selesai tepat waktu sebelum hari Senin.
----
-### 3. Database
-**SQLite (via Laravel Eloquent ORM):**
-**Alasan Pemilihan & Keunggulan:**
-	- **Zero-Configuration & Serverless Architecture:** SQLite tidak membutuhkan proses _daemon/service_ eksternal yang berjalan di latar belakang. Seluruh database disimpan dalam satu file lokal di dalam project, meminimalisasi risiko kegagalan koneksi _service_ saat demo aplikasi di ruang sidang.
-	- **Portabilitas Tinggi (Portable):** Mempermudah pemindahan seluruh ekosistem proyek dari laptop pribadi ke laptop sekolah/penguji hanya dengan menyalin folder proyek tanpa perlu melakukan _export-import_ file `.sql` via phpMyAdmin.
-	- **Sesuai Karakteristik Perangkat Kiosk:** Di dunia industri nyata, mesin _Self-Ordering Kiosk_ mandiri sering kali dirancang menggunakan arsitektur _local-first application_ yang tertanam langsung di mesin gudang/lobi demi kecepatan respon transaksi yang instan tanpa ketergantungan latensi jaringan server.
+## 2. Rationale & Alasan Pemilihan Komponen (Bahan Argumen Sidang)
 
+## A. Mengapa Memilih Backend Laravel 11 (Bukan PHP Native)?
+
+1. Arsitektur Standar Industri (Enterprise Ready): Laravel secara otomatis menerapkan pola desain MVC (Model-View-Controller) [local]. Ini membuktikan kepada PT Bonet & PT ION Network bahwa siswa memahami pemisahan logika bisnis (_Controller_), manipulasi data (_Model_), dan antarmuka visual (_View_) sesuai standar kerja _software house_ nyata.
+2. Keamanan Otomatis (Built-in Security): Memanfaatkan fitur proteksi `@csrf` pada setiap form untuk mencegah celah keamanan _Cross-Site Request Forgery_, serta fitur _PDO Parameter Binding_ bawaan Eloquent ORM yang secara otomatis menutup total celah serangan SQL Injection [local]. Komponen ini jauh lebih aman dan ringkas didebat daripada menulis skrip sanitasi manual di PHP Native.
+3. Rapid Development Speed (Vibe Coding Optimization): Mengingat _development time_ yang sangat singkat (3 hari efektif), Laravel menyediakan utilitas _Form Validation, File Upload Handler,_ dan _Database Migration_ siap pakai, sehingga alokasi waktu dialihkan 100% untuk fokus pada optimasi multimedia.
+
+## B. Mengapa Memilih Tailwind CSS via NPM / Vite Bundler (Bukan CDN)?
+
+1. Skor Optimasi Performa Tinggi (Google Lighthouse 90+): Melalui _Package Manager_ (NPM), _build tools_ Vite akan melakukan proses _purging_ otomatis saat kompilasi [local]. Sistem hanya mengekstrak utilitas _classes_ yang benar-benar tertulis di file Blade, menghasilkan ukuran file CSS akhir yang sangat kecil (<50 KB) [local].
+2. Kustomisasi Animasi Restoran: Membuka akses penuh pada file `tailwind.config.js` untuk merancang animasi kustom (seperti efek denyut/_pulse_ pada tombol pesanan) dan skema warna merah-putih khas restoran tanpa mengotori file HTML.
+3. Portabilitas Dependensi: Memastikan seluruh aset gaya (_styling_) ter-bundle secara lokal di dalam sistem operasi Linux, sehingga aplikasi tetap tampil sempurna saat dipindahkan ke komputer ruang sidang tanpa ketergantungan koneksi internet luar.
+
+## C. Mengapa Memilih Vanilla JavaScript Murni (Bukan Alpine.js / React)?
+
+1. Zero-Overhead & High Stability (Strategi Cari Aman): Menghilangkan lapisan _reactive engine_ atau _Virtual DOM_ dari framework pihak ketiga yang membutuhkan waktu belajar tambahan. Vanilla JS menggunakan fungsi fundamental (seperti `document.getElementById()`) yang sudah dikuasai siswa sejak kelas 11 [local].
+2. Single Page Application (SPA) Palsu yang Ringan: Perpindahan Fase 1 hingga Fase 8 pada mesin kiosk dikendalikan instan secara lokal via _Class Switching_ Tailwind (`block` dan `hidden`). Hal ini menjamin transisi antar-layar berjalan di bawah 50ms, sangat responsif, dan bebas dari risiko kebocoran memori (_memory leak_).
+3. Transparansi Logika Keranjang Belanja: Array data pesanan (`list_belanja`) dikelola murni menggunakan manipulasi array lokal standar, membuatnya sangat visual, logis, dan mudah dipertanggungjawabkan baris per baris saat dibedah oleh penguji industri.
+
+## D. Mengapa Memilih Database SQLite (Bukan MySQL / XAMPP)?
+
+1. Zero-Configuration (Serverless): SQLite tidak memerlukan proses _daemon/service_ eksternal (seperti `systemctl start mysql` di Linux) yang rawan mengalami kegagalan _privilege root_ atau _port conflict_ saat demo di depan Kakom.
+2. Karakteristik Asli Perangkat Kiosk (Local-First Architecture): Di industri retail nyata, mesin _Self-Ordering Kiosk_ adalah _embedded node_ (perangkat mandiri di lobi). Menggunakan SQLite meniru arsitektur industri di mana data transaksi disimpan langsung secara lokal di dalam mesin untuk kecepatan baca-tulis instan tanpa latensi jaringan internet server pusat.
+3. Extreme Portability: Seluruh basis data disimpan dalam satu file fisik (`database.sqlite`) di dalam folder proyek. Penguji dapat memindahkan proyek antar-laptop hanya dengan metode _copy-paste_ folder tanpa perlu melakukan ritual _export-import_ file `.sql` di phpMyAdmin.
+
+## E. Mengapa Memilih Pure Native Laravel Logic untuk Payment (Tanpa Gateway)?
+
+1. Isolasi Jaringan (100% Offline Capable): Memutus ketergantungan pada API luar (seperti Midtrans/Xendit) dan _webhook_ internet. Aplikasi dijamin anti-crash / anti-timeout meskipun koneksi Wi-Fi di ruang sidang sekolah mengalami gangguan atau lemot.
+2. Validasi Finansial Sisi Server (Integritas Data): Sistem berfokus pada validasi logika data _backend_. Nominal harga dari sisi klien dihitung ulang oleh _Controller_ dengan mencocokkannya ke database internal sebelum menyimpannya ke tabel `orders` demi mencegah manipulasi harga dari luar.
+3. State-Driven Simulation: Menggunakan simulasi tombol rahasia "Simulasi Sukses" untuk mengubah status data secara dinamis dari `pending` menjadi `paid`. Hal ini sudah memenuhi 100% penilaian logika pengujian unit kompetensi RPL.
 ---
 # 3. Core Features & User Stories (Spesifikasi Fitur)
 ### 1. Front-Facing Self-Ordering Kiosk
