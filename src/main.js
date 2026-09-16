@@ -14,6 +14,7 @@
 import './style.css'
 
 // ── Import Semua Template Layar ────────────────────────────────────────
+import templateLayarScreensaver from './templates/layar-screensaver.js'
 import templateLayarKunci from './templates/layar-kunci.js'
 import templatePreferensi from './templates/preferensi.js'
 import templateLayarMenu from './templates/layar-menu.js'
@@ -28,6 +29,7 @@ import KioskApp from './components/kiosk.js'
 
 // ── Gabungkan Semua Template ───────────────────────────────────────────
 const gabunganTemplate = `
+  ${templateLayarScreensaver}
   ${templateLayarKunci}
   ${templatePreferensi}
   ${templateLayarMenu}

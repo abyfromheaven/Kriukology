@@ -27,7 +27,7 @@ import mainkanSuara from '../utils/audio.js'
 class KioskApp {
   constructor() {
     // ── State Aplikasi ─────────────────────────────────────────────────
-    this.langkah = 'kunci'
+    this.langkah = 'screensaver'
     this.bahasa = 'id'
     this.tipePesanan = 'dine'
     this.kategoriAktif = 'rekomendasi'
@@ -42,6 +42,7 @@ class KioskApp {
     this.nomorAntrean = 'PD-001'
     this.timerIdle = null
     this.timerStruk = null
+    this.timerPoster = null
     this.detikStruk = 15
 
     this.resetWaktuIdle()
@@ -85,6 +86,26 @@ class KioskApp {
     return kamus[this.bahasa][kunci] || kunci
   }
 
+  /** Memulai pemesanan dari screensaver */
+  mulaiPesan() {
+    clearInterval(this.timerPoster)
+    this.navigasiKe('preferensi')
+  }
+
+  /** Memulai rotasi poster screensaver */
+  mulaiRotasiPoster() {
+    clearInterval(this.timerPoster)
+    let indeksSekarang = 0
+    const semuaPoster = document.querySelectorAll('.poster-slide')
+    if (semuaPoster.length <= 1) return
+
+    this.timerPoster = setInterval(() => {
+      semuaPoster[indeksSekarang].classList.remove('aktif')
+      indeksSekarang = (indeksSekarang + 1) % semuaPoster.length
+      semuaPoster[indeksSekarang].classList.add('aktif')
+    }, 6000)
+  }
+
   /** Navigasi ke layar tertentu */
   navigasiKe(langkahBerikutnya) {
     mainkanSuara()
@@ -96,7 +117,7 @@ class KioskApp {
   /** Reset timer idle timeout (60 detik) */
   resetWaktuIdle() {
     clearTimeout(this.timerIdle)
-    const layarTanpaIdle = ['kunci', 'sukses', 'struk']
+    const layarTanpaIdle = ['screensaver', 'kunci', 'sukses', 'struk']
     if (!layarTanpaIdle.includes(this.langkah)) {
       this.timerIdle = setTimeout(() => this.aturUlang(), 60000)
     }
@@ -195,7 +216,7 @@ class KioskApp {
   aturUlang() {
     clearTimeout(this.timerIdle)
     clearInterval(this.timerStruk)
-    this.langkah = 'kunci'
+    this.langkah = 'screensaver'
     this.keranjang = []
     this.kategoriAktif = 'rekomendasi'
     this.itemSaatIni = null
@@ -228,6 +249,10 @@ class KioskApp {
       case 'navigasiKe':
         if (argumen === 'keranjang' && !this.keranjang.length) return
         this.navigasiKe(argumen)
+        break
+
+      case 'mulaiPesan':
+        this.mulaiPesan()
         break
 
       case 'aturUlang':
@@ -325,6 +350,11 @@ class KioskApp {
     document.querySelectorAll('[data-screen]').forEach(el => {
       el.style.display = el.dataset.screen === this.langkah ? '' : 'none'
     })
+
+    // Mulai rotasi poster jika di screensaver
+    if (this.langkah === 'screensaver') {
+      this.mulaiRotasiPoster()
+    }
 
     // Perbarui semua teks berdasarkan data-text
     document.querySelectorAll('[data-text]').forEach(el => {
