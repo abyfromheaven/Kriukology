@@ -1,49 +1,19 @@
 /**
  * ==========================================================================
- * KOMPONEN ALPINE.JS: KIOSK
+ * KOMPONEN VANILLA JS: KIOSK
  * ==========================================================================
- * Komponen utama yang mengelola seluruh state dan logika aplikasi kiosk
+ * Kelas utama yang mengelola seluruh state dan logika aplikasi kiosk
  * PahaDada.id. Menggunakan pola State Machine untuk navigasi antar layar.
  *
  * Alur navigasi (state machine):
  * kunci → preferensi → menu → keranjang → pengiriman → pembayaran → sukses → struk → (auto-reset ke kunci)
  *
- * State yang dikelola:
- * - langkah          : Layar aktif saat ini (kunci/preferensi/menu/dst)
- * - bahasa           : Pilihan bahasa pengguna (id/en)
- * - tipePesanan      : Tipe pesanan (dine/take)
- * - kategoriAktif    : Kategori menu yang sedang aktif
- * - keranjang        : Array item di keranjang belanja
- * - itemSaatIni      : Item menu yang sedang dibuka di modal
- * - tampilModal      : Status tampilan modal kustomisasi
- * - tampilToast      : Status tampilan toast notifikasi
- * - kustomisasi      : Pilihan kustomisasi (potongan/minuman/saus)
- * - metodePengiriman : Metode pengiriman (meja/kasir)
- * - nomorMeja        : Nomor meja yang diketik pengguna
- * - metodePembayaran : Metode pembayaran yang dipilih
- * - nomorAntrean     : Nomor antrean acak (contoh: PD-342)
- * - timerIdle        : Timer idle timeout (60 detik)
- * - timerStruk       : Timer countdown struk (15 detik)
- * - detikStruk       : Sisa detik countdown struk
- *
- * Computed properties (getter):
- * - menuTampil  : Menu yang difilter berdasarkan kategori aktif
- * - totalHarga  : Total harga semua item di keranjang
- * - jumlahItem  : Total jumlah item di keranjang
- * - mejaValid   : Apakah nomor meja valid (1-99)
- * - bisaBayar   : Apakah pengguna sudah memenuhi syarat untuk pembayaran
- *
- * Metode utama:
- * - terjemahkan(key)    : Mengambil terjemahan dari kamus
- * - navigasiKe(langkah) : Pindah ke layar tertentu
- * - mainkanSuara()      : Memutar suara tombol
- * - resetIdleTimer()    : Reset timer idle timeout
- * - bukaMenu(item)      : Buka modal kustomisasi item
- * - tambahKeKeranjang() : Tambah item ke keranjang
- * - ubahJumlah(i, n)    : Ubah jumlah item di keranjang
- * - tekanKeypad(tombol) : Input nomor meja via keypad virtual
- * - selesaikanPesanan() : Proses pesanan selesai
- * - aturUlang()         : Reset semua state ke awal
+ * Arsitektur rendering:
+ * - Semua template di-inject sebagai HTML string ke DOM
+ * - Setiap state change memanggil render() yang update DOM secara imperatif
+ * - Event handling via document-level delegation (data-action attributes)
+ * - Text binding via data-text attributes
+ * - Conditional rendering via data-screen + style.display
  * ==========================================================================
  */
 
@@ -54,385 +24,577 @@ import kamus from '../data/kamus.js'
 import formatRupiah from '../utils/format.js'
 import mainkanSuara from '../utils/audio.js'
 
-/**
- * buatKomponenKiosk — Faktori yang mengembalikan definisi Alpine.js component
- *
- * Fungsi ini mengembalikan objek konfigurasi untuk `Alpine.data('kiosk', ...)`.
- * Semua state, computed, dan metode didefinisikan di sini.
- *
- * @returns {Object} — Konfigurasi Alpine.js component
- */
-function buatKomponenKiosk() {
-  return {
+class KioskApp {
+  constructor() {
+    this.langkah = 'kunci'
+    this.bahasa = 'id'
+    this.tipePesanan = 'dine'
+    this.kategoriAktif = 'rekomendasi'
+    this.keranjang = []
+    this.itemSaatIni = null
+    this.tampilModal = false
+    this.tampilToast = false
+    this.kustomisasi = { potongan: '', minuman: '', saus: '' }
+    this.metodePengiriman = ''
+    this.nomorMeja = ''
+    this.metodePembayaran = ''
+    this.nomorAntrean = 'PD-001'
+    this.timerIdle = null
+    this.timerStruk = null
+    this.detikStruk = 15
 
-    // ── STATE: Variabel reaktif yang menyimpan kondisi aplikasi ──────────
+    this.resetIdleTimer()
+    this.bindEvents()
+    this.render()
+  }
 
-    /** Langkah / layar aktif saat ini */
-    langkah: 'kunci',
+  // ── COMPUTED ──────────────────────────────────────────────────────────
 
-    /** Pilihan bahasa pengguna ('id' atau 'en') */
-    bahasa: 'id',
+  getMenuTampil() {
+    if (this.kategoriAktif === 'rekomendasi') {
+      return daftarMenu.filter(item => item.kategori === 'rekomendasi')
+    }
+    return daftarMenu.filter(item => item.kategori === this.kategoriAktif)
+  }
 
-    /** Tipe pesanan: 'dine' (makan di sini) atau 'take' (bawa pulang) */
-    tipePesanan: 'dine',
+  getTotalHarga() {
+    return this.keranjang.reduce((jumlah, baris) => jumlah + baris.harga * baris.jumlah, 0)
+  }
 
-    /** Kategori menu yang sedang dipilih (default: rekomendasi) */
-    kategoriAktif: 'rekomendasi',
+  getJumlahItem() {
+    return this.keranjang.reduce((jumlah, baris) => jumlah + baris.jumlah, 0)
+  }
 
-    /** Array item di keranjang belanja */
-    keranjang: [],
+  getMejaValid() {
+    const nomor = Number(this.nomorMeja)
+    return nomor >= 1 && nomor <= 99
+  }
 
-    /** Item menu yang sedang dibuka di modal kustomisasi */
-    itemSaatIni: null,
+  getBisaBayar() {
+    return this.metodePengiriman === 'kasir' ||
+      (this.metodePengiriman === 'meja' && this.getMejaValid())
+  }
 
-    /** Status tampilan modal kustomisasi (true = terbuka) */
-    tampilModal: false,
+  // ── METHODS ───────────────────────────────────────────────────────────
 
-    /** Status tampilan toast notifikasi (true = terlihat) */
-    tampilToast: false,
+  terjemahkan(kunci) {
+    return kamus[this.bahasa][kunci] || kunci
+  }
 
-    /** Pilihan kustomisasi item (potongan ayam, minuman, saus) */
-    kustomisasi: { potongan: '', minuman: '', saus: '' },
+  navigasiKe(langkahBerikutnya) {
+    mainkanSuara()
+    this.langkah = langkahBerikutnya
+    this.resetIdleTimer()
+    this.render()
+  }
 
-    /** Metode pengiriman: 'meja' atau 'kasir' */
-    metodePengiriman: '',
+  resetIdleTimer() {
+    clearTimeout(this.timerIdle)
+    if (this.langkah !== 'kunci' && this.langkah !== 'sukses' && this.langkah !== 'struk') {
+      this.timerIdle = setTimeout(() => this.aturUlang(), 60000)
+    }
+  }
 
-    /** Nomor meja yang diketik pengguna (string, max 2 digit) */
-    nomorMeja: '',
+  bukaMenu(item) {
+    this.itemSaatIni = item
+    this.kustomisasi = { potongan: '', minuman: '', saus: '' }
+    this.tampilModal = true
+    mainkanSuara()
+    this.render()
+  }
 
-    /** Metode pembayaran yang dipilih (contoh: 'qris', 'cash', dll) */
-    metodePembayaran: '',
+  tambahKeKeranjang() {
+    if (!this.kustomisasi.potongan || !this.kustomisasi.minuman || !this.kustomisasi.saus) return
 
-    /** Nomor antrean pesanan (contoh: 'PD-342') */
-    nomorAntrean: 'PD-001',
+    this.keranjang.push({
+      ...this.itemSaatIni,
+      kustomisasi: { ...this.kustomisasi },
+      jumlah: 1,
+      kunci: Date.now(),
+    })
 
-    /** Referensi timer idle timeout */
-    timerIdle: null,
+    this.tampilModal = false
+    this.tampilToast = true
+    mainkanSuara()
+    this.render()
 
-    /** Referensi timer countdown struk */
-    timerStruk: null,
+    setTimeout(() => {
+      this.tampilToast = false
+      this.render()
+    }, 1800)
+  }
 
-    /** Sisa detik countdown struk (mulai dari 15) */
-    detikStruk: 15,
+  ubahJumlah(indeks, jumlah) {
+    const jumlahBaru = this.keranjang[indeks].jumlah + jumlah
+    if (jumlahBaru < 1) {
+      this.keranjang.splice(indeks, 1)
+    } else {
+      this.keranjang[indeks].jumlah = jumlahBaru
+    }
+    mainkanSuara()
+    if (!this.keranjang.length) {
+      this.navigasiKe('menu')
+    } else {
+      this.render()
+    }
+  }
 
-    // ── DATA STATIS: Tidak berubah selama aplikasi berjalan ─────────────
+  tekanKeypad(tombol) {
+    if (tombol === 'clear') {
+      this.nomorMeja = ''
+    } else if (tombol === 'delete') {
+      this.nomorMeja = this.nomorMeja.slice(0, -1)
+    } else if (this.nomorMeja.length < 2) {
+      this.nomorMeja += String(tombol)
+    }
+    mainkanSuara()
+    this.render()
+  }
 
-    /** Daftar kategori menu (import dari file terpisah) */
-    daftarKategori: daftarKategori,
+  selesaikanPesanan() {
+    mainkanSuara()
+    const angkaAcak = Math.floor(Math.random() * 900) + 100
+    this.nomorAntrean = `PD-${String(angkaAcak)}`
+    this.langkah = 'sukses'
+    this.render()
 
-    /** Daftar metode pembayaran (import dari file terpisah) */
-    daftarMetodePembayaran: daftarMetodePembayaran,
+    setTimeout(() => {
+      this.langkah = 'struk'
+      this.mulaiTimerStruk()
+      this.render()
+    }, 2500)
+  }
 
-    // ── LIFECYCLE: Dipanggil saat komponen pertama kali dimuat ──────────
-
-    /**
-     * init() — Fungsi inisialisasi Alpine.js component
-     * Dipanggil otomatis oleh Alpine.js saat komponen dimount.
-     * Memulai timer idle timeout untuk pertama kali.
-     */
-    init() {
-      this.resetIdleTimer()
-    },
-
-    // ── COMPUTED PROPERTIES: Nilai yang dihitung dari state ─────────────
-
-    /**
-     * menuTampil — Menu yang difilter berdasarkan kategori aktif
-     * Jika kategori 'rekomendasi', tampilkan semua item rekomendasi.
-     * Jika kategori lain, tampilkan item yang sesuai.
-     *
-     * @returns {Array} — Array objek menu yang sudah difilter
-     */
-    get menuTampil() {
-      if (this.kategoriAktif === 'rekomendasi') {
-        return daftarMenu.filter(item => item.kategori === 'rekomendasi')
+  mulaiTimerStruk() {
+    this.detikStruk = 15
+    clearInterval(this.timerStruk)
+    this.timerStruk = setInterval(() => {
+      this.detikStruk--
+      this.updateDetikStruk()
+      if (this.detikStruk <= 0) {
+        clearInterval(this.timerStruk)
+        this.aturUlang()
       }
-      return daftarMenu.filter(item => item.kategori === this.kategoriAktif)
-    },
+    }, 1000)
+  }
 
-    /**
-     * totalHarga — Total harga semua item di keranjang
-     * Dihitung dengan menjumlahkan (harga × jumlah) setiap item.
-     *
-     * @returns {number} — Total harga dalam Rupiah (angka)
-     */
-    get totalHarga() {
-      return this.keranjang.reduce((jumlah, baris) => {
-        return jumlah + baris.harga * baris.jumlah
-      }, 0)
-    },
+  aturUlang() {
+    clearTimeout(this.timerIdle)
+    clearInterval(this.timerStruk)
+    this.langkah = 'kunci'
+    this.keranjang = []
+    this.kategoriAktif = 'rekomendasi'
+    this.itemSaatIni = null
+    this.tampilModal = false
+    this.metodePengiriman = ''
+    this.nomorMeja = ''
+    this.metodePembayaran = ''
+    this.kustomisasi = { potongan: '', minuman: '', saus: '' }
+    this.render()
+  }
 
-    /**
-     * jumlahItem — Total jumlah item di keranjang
-     * Dihitung dengan menjumlahkan jumlah setiap item.
-     *
-     * @returns {number} — Total jumlah item (angka)
-     */
-    get jumlahItem() {
-      return this.keranjang.reduce((jumlah, baris) => {
-        return jumlah + baris.jumlah
-      }, 0)
-    },
+  // ── EVENT BINDING ─────────────────────────────────────────────────────
 
-    /**
-     * mejaValid — Pengecekan validitas nomor meja
-     * Nomor meja valid jika antara 1-99.
-     *
-     * @returns {boolean} — true jika nomor meja valid
-     */
-    get mejaValid() {
-      const nomor = Number(this.nomorMeja)
-      return nomor >= 1 && nomor <= 99
-    },
+  bindEvents() {
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]')
+      if (!btn) return
+      const action = btn.dataset.action
+      this.handleAction(action)
+    })
 
-    /**
-     * bisaBayar — Pengecekan apakah pengguna bisa lanjut ke pembayaran
-     * Pengguna bisa bayar jika:
-     * - Memilih "Ambil di kasir", ATAU
-     * - Memilih "Antar ke meja" DAN nomor meja valid
-     *
-     * @returns {boolean} — true jika pengguna memenuhi syarat
-     */
-    get bisaBayar() {
-      return (
-        this.metodePengiriman === 'kasir' ||
-        (this.metodePengiriman === 'meja' && this.mejaValid)
-      )
-    },
+    window.addEventListener('keydown', () => this.resetIdleTimer())
+  }
 
-    // ── METODE: Fungsi-fungsi yang mengubah state aplikasi ──────────────
+  handleAction(action) {
+    const [method, arg] = action.split(':')
 
-    /**
-     * terjemahkan — Mengambil teks terjemahan dari kamus
-     * Mencari nilai berdasarkan key dan bahasa aktif.
-     * Jika key tidak ditemukan, mengembalikan key itu sendiri (fallback).
-     *
-     * @param {string} kunci — Kunci teks yang ingin diterjemahkan
-     * @returns {string} — Teks dalam bahasa yang sesuai
-     */
-    terjemahkan(kunci) {
-      return kamus[this.bahasa][kunci] || kunci
-    },
-
-    /**
-     * navigasiKe — Pindah ke layar tertentu
-     * Memutar suara tombol, mengubah state langkah, dan mereset timer idle.
-     *
-     * @param {string} langkahBerikutnya — ID langkah tujuan
-     */
-    navigasiKe(langkahBerikutnya) {
-      mainkanSuara()
-      this.langkah = langkahBerikutnya
-      this.resetIdleTimer()
-    },
-
-    /**
-     * mainkanSuara — Memutar suara tombol (delegasi ke utilitas audio)
-     * Dipanggil untuk memberikan umpan balik audio saat interaksi.
-     */
-    mainkanSuara: mainkanSuara,
-
-    /**
-     * resetIdleTimer — Mereset timer idle timeout (60 detik)
-     * Jika pengguna tidak melakukan apa pun selama 60 detik,
-     * kiosk otomatis kembali ke layar kunci (lockscreen).
-     *
-     * Timer TIDAK aktif di layar: kunci, sukses, dan struk
-     * (karena layar tersebut sudah memiliki auto-reset sendiri).
-     */
-    resetIdleTimer() {
-      clearTimeout(this.timerIdle)
-
-      // Hanya aktifkan timer jika bukan di layar kunci/sukses/struk
-      if (
-        this.langkah !== 'kunci' &&
-        this.langkah !== 'sukses' &&
-        this.langkah !== 'struk'
-      ) {
-        this.timerIdle = setTimeout(() => {
-          this.aturUlang()
-        }, 60000) // 60.000 ms = 60 detik
+    switch (method) {
+      case 'navigasiKe':
+        if (arg === 'keranjang' && !this.keranjang.length) return
+        this.navigasiKe(arg)
+        break
+      case 'aturUlang':
+        this.aturUlang()
+        break
+      case 'setBahasa':
+        this.bahasa = arg
+        mainkanSuara()
+        this.render()
+        break
+      case 'setTipePesanan':
+        this.tipePesanan = arg
+        mainkanSuara()
+        this.render()
+        break
+      case 'setKategori':
+        this.kategoriAktif = arg
+        mainkanSuara()
+        this.render()
+        break
+      case 'bukaMenu': {
+        const id = Number(arg)
+        const item = daftarMenu.find(m => m.id === id)
+        if (item) this.bukaMenu(item)
+        break
       }
-    },
-
-    /**
-     * bukaMenu — Membuka modal kustomisasi untuk item tertentu
-     * Menyimpan item yang dipilih ke state itemSaatIni,
-     * mereset kustomisasi, dan menampilkan modal.
-     *
-     * @param {Object} item — Objek menu yang dipilih pengguna
-     */
-    bukaMenu(item) {
-      this.itemSaatIni = item
-      this.kustomisasi = { potongan: '', minuman: '', saus: '' }
-      this.tampilModal = true
-      mainkanSuara()
-    },
-
-    /**
-     * tambahKeKeranjang — Menambahkan item yang sudah dikustomisasi ke keranjang
-     * Hanya berjalan jika semua opsi kustomisasi sudah dipilih.
-     *
-     * Proses:
-     * 1. Salin data item + kustomisasi + jumlah 1
-     * 2. Tambahkan ke array keranjang dengan kunci unik (timestamp)
-     * 3. Tutup modal
-     * 4. Tampilkan toast notifikasi selama 1.8 detik
-     */
-    tambahKeKeranjang() {
-      // Validasi: semua opsi kustomisasi harus dipilih
-      if (!this.kustomisasi.potongan || !this.kustomisasi.minuman || !this.kustomisasi.saus) {
-        return
+      case 'setKustomisasi':
+        this.kustomisasi[arg.split('=')[0]] = arg.split('=')[1]
+        mainkanSuara()
+        this.render()
+        break
+      case 'tambahKeKeranjang':
+        this.tambahKeKeranjang()
+        break
+      case 'tutupModal':
+        this.tampilModal = false
+        this.render()
+        break
+      case 'ubahJumlah': {
+        const [idx, num] = arg.split(',')
+        this.ubahJumlah(Number(idx), Number(num))
+        break
       }
+      case 'setMetodePengiriman':
+        this.metodePengiriman = arg
+        if (arg === 'kasir') this.nomorMeja = ''
+        mainkanSuara()
+        this.render()
+        break
+      case 'tekanKeypad':
+        this.tekanKeypad(arg === 'delete' ? 'delete' : arg === 'clear' ? 'clear' : Number(arg))
+        break
+      case 'setMetodePembayaran':
+        this.metodePembayaran = arg
+        mainkanSuara()
+        this.render()
+        break
+      case 'selesaikanPesanan':
+        this.selesaikanPesanan()
+        break
+      default:
+        break
+    }
+  }
 
-      // Tambahkan item ke keranjang
-      this.keranjang.push({
-        ...this.itemSaatIni,
-        kustomisasi: { ...this.kustomisasi },
-        jumlah: 1,
-        kunci: Date.now(), // Kunci unik berbasis timestamp
+  // ── RENDERING ─────────────────────────────────────────────────────────
+
+  render() {
+    const t = (key) => this.terjemahkan(key)
+
+    document.querySelectorAll('[data-screen]').forEach(el => {
+      el.style.display = el.dataset.screen === this.langkah ? '' : 'none'
+    })
+
+    document.querySelectorAll('[data-text]').forEach(el => {
+      const key = el.dataset.text
+      if (key) el.textContent = t(key)
+    })
+
+    this.renderPreferensi()
+    this.renderMenu()
+    this.renderKeranjang()
+    this.renderPengiriman()
+    this.renderPembayaran()
+    this.renderStruk()
+    this.renderSukses()
+    this.updateModal()
+    this.updateToast()
+  }
+
+  renderPreferensi() {
+    const el = document.querySelector('[data-screen="preferensi"]')
+    if (!el) return
+    const t = (k) => this.terjemahkan(k)
+
+    el.querySelectorAll('[data-active-lang]').forEach(btn => {
+      const isActive = btn.dataset.activeLang === this.bahasa
+      btn.classList.toggle('border-[#d51f32]', isActive)
+      btn.classList.toggle('bg-red-50', isActive)
+      btn.classList.toggle('border-stone-200', !isActive)
+    })
+
+    el.querySelectorAll('[data-active-tipe]').forEach(btn => {
+      const isActive = btn.dataset.activeTipe === this.tipePesanan
+      btn.classList.toggle('bg-[#d51f32]', isActive)
+      btn.classList.toggle('text-white', isActive)
+      btn.classList.toggle('bg-white', !isActive)
+      btn.classList.toggle('border', !isActive)
+      btn.classList.toggle('border-stone-200', !isActive)
+    })
+  }
+
+  renderMenu() {
+    const el = document.querySelector('[data-screen="menu"]')
+    if (!el) return
+    const t = (k) => this.terjemahkan(k)
+
+    const headerTipe = el.querySelector('[data-bind="tipePesanan"]')
+    if (headerTipe) headerTipe.textContent = this.tipePesanan === 'dine' ? t('dine') : t('take')
+
+    const katContainer = el.querySelector('[data-list="kategori"]')
+    if (katContainer) {
+      katContainer.innerHTML = daftarKategori.map(kat => {
+        const aktif = this.kategoriAktif === kat.id
+        return `<button data-action="setKategori:${kat.id}"
+          class="w-full rounded-xl px-2 py-3 text-[10px] font-bold leading-3 transition ${aktif ? 'bg-[#d51f32] text-white shadow-md' : 'text-stone-500'}">
+          <i class="${kat.icon} block text-base mb-1"></i>
+          <span>${kat.label[this.bahasa]}</span>
+        </button>`
+      }).join('')
+    }
+
+    const menuContainer = el.querySelector('[data-list="menuTampil"]')
+    if (menuContainer) {
+      const items = this.getMenuTampil()
+      menuContainer.innerHTML = items.map(item => `
+        <button data-action="bukaMenu:${item.id}"
+          class="text-left rounded-2xl bg-white overflow-hidden border border-stone-100 shadow-sm hover:-translate-y-0.5 transition">
+          <div class="h-28 relative flex items-center justify-center mini-food overflow-hidden">
+            <img src="/assets/menu-placeholder.svg" alt="" class="absolute inset-0 h-full w-full object-cover opacity-80">
+            ${item.tag ? `<span class="absolute top-2 left-2 bg-[#f5bd27] px-2 py-1 rounded-full text-[8px] font-black text-[#4c2a14]">${item.tag}</span>` : ''}
+            <span class="relative text-4xl drop-shadow-lg">${item.emoji}</span>
+          </div>
+          <div class="p-3">
+            <p class="font-black text-xs leading-4">${item.nama}</p>
+            <p class="text-[10px] text-stone-500 mt-1 truncate">${item.deskripsi}</p>
+            <div class="mt-3 flex justify-between items-center">
+              <span class="text-xs font-black text-[#d51f32]">${formatRupiah(item.harga)}</span>
+              <span class="h-6 w-6 bg-[#d51f32] text-white rounded-full inline-flex items-center justify-center">
+                <i class="fa-solid fa-plus text-[10px]"></i>
+              </span>
+            </div>
+          </div>
+        </button>
+      `).join('')
+    }
+
+    const keranjangBtn = el.querySelector('[data-bind="keranjangMini"]')
+    if (keranjangBtn) {
+      const ada = this.keranjang.length > 0
+      keranjangBtn.classList.toggle('bg-[#231f20]', ada)
+      keranjangBtn.classList.toggle('text-white', ada)
+      keranjangBtn.classList.toggle('bg-stone-200', !ada)
+      keranjangBtn.classList.toggle('text-stone-400', !ada)
+      keranjangBtn.querySelector('[data-bind="jumlahItemMenu"]').textContent = this.getJumlahItem() + ' ' + t('items')
+      keranjangBtn.querySelector('[data-bind="totalHargaMenu"]').textContent = formatRupiah(this.getTotalHarga())
+      keranjangBtn.querySelector('[data-bind="viewCartText"]').textContent = t('viewCart')
+    }
+  }
+
+  renderKeranjang() {
+    const el = document.querySelector('[data-screen="keranjang"]')
+    if (!el) return
+    const t = (k) => this.terjemahkan(k)
+
+    const listEl = el.querySelector('[data-list="keranjangItems"]')
+    if (listEl) {
+      listEl.innerHTML = this.keranjang.map((baris, indeks) => `
+        <article class="bg-white rounded-2xl p-4 mb-3 border border-stone-100">
+          <div class="flex gap-3">
+            <div class="mini-food h-12 w-12 rounded-xl flex items-center justify-center text-2xl">🍗</div>
+            <div class="flex-1">
+              <p class="font-black text-sm">${baris.nama}</p>
+              <p class="text-[10px] text-stone-500 mt-1">${baris.kustomisasi.potongan} · ${baris.kustomisasi.minuman} · ${baris.kustomisasi.saus}</p>
+              <p class="font-black text-[#d51f32] text-sm mt-2">${formatRupiah(baris.harga * baris.jumlah)}</p>
+            </div>
+            <div class="flex items-end gap-2">
+              <button data-action="ubahJumlah:${indeks},-1"
+                class="h-7 w-7 rounded-full bg-stone-100">
+                <i class="fa-solid fa-minus text-[10px]"></i>
+              </button>
+              <span class="font-black text-sm">${baris.jumlah}</span>
+              <button data-action="ubahJumlah:${indeks},1"
+                class="h-7 w-7 rounded-full bg-[#d51f32] text-white">
+                <i class="fa-solid fa-plus text-[10px]"></i>
+              </button>
+            </div>
+          </div>
+        </article>
+      `).join('')
+    }
+
+    const totalEl = el.querySelector('[data-bind="totalHargaKeranjang"]')
+    if (totalEl) totalEl.textContent = formatRupiah(this.getTotalHarga())
+  }
+
+  renderPengiriman() {
+    const el = document.querySelector('[data-screen="pengiriman"]')
+    if (!el) return
+    const t = (k) => this.terjemahkan(k)
+
+    el.querySelectorAll('[data-active-metode]').forEach(btn => {
+      const isActive = btn.dataset.activeMetode === this.metodePengiriman
+      btn.classList.toggle('bg-[#d51f32]', isActive)
+      btn.classList.toggle('text-white', isActive)
+      btn.classList.toggle('bg-white', !isActive)
+      btn.classList.toggle('border', !isActive)
+      btn.classList.toggle('border-stone-200', !isActive)
+    })
+
+    const keypadSection = el.querySelector('[data-bind="keypadSection"]')
+    if (keypadSection) {
+      keypadSection.style.display = this.metodePengiriman === 'meja' ? '' : 'none'
+
+      if (this.metodePengiriman === 'meja') {
+        const display = keypadSection.querySelector('[data-bind="mejaDisplay"]')
+        if (display) display.textContent = this.nomorMeja || '—'
+
+        const error = keypadSection.querySelector('[data-bind="mejaError"]')
+        if (error) error.style.display = this.nomorMeja && !this.getMejaValid() ? '' : 'none'
+      }
+    }
+
+    const payBtn = el.querySelector('[data-bind="payBtn"]')
+    if (payBtn) {
+      payBtn.disabled = !this.getBisaBayar()
+      payBtn.classList.toggle('disabled:bg-stone-300', !this.getBisaBayar())
+      payBtn.classList.toggle('bg-[#231f20]', this.getBisaBayar())
+    }
+  }
+
+  renderPembayaran() {
+    const el = document.querySelector('[data-screen="pembayaran"]')
+    if (!el) return
+    const t = (k) => this.terjemahkan(k)
+
+    const gridEl = el.querySelector('[data-list="metodePembayaran"]')
+    if (gridEl) {
+      gridEl.innerHTML = daftarMetodePembayaran.map(metode => {
+        const isActive = this.metodePembayaran === metode.id
+        return `<button data-action="setMetodePembayaran:${metode.id}"
+          class="rounded-xl border p-3 text-center ${isActive ? 'bg-[#d51f32] text-white border-[#d51f32]' : 'bg-white border-stone-200'}">
+          <i class="${metode.icon} text-lg"></i>
+          <span class="block text-[10px] font-bold mt-2">${metode.label}</span>
+        </button>`
+      }).join('')
+    }
+
+    const preview = el.querySelector('[data-bind="paymentPreview"]')
+    if (preview) {
+      let previewHTML = ''
+      if (this.metodePembayaran === 'qris') {
+        const cells = Array.from({ length: 49 }, (_, i) => {
+          const cls = (i + 1) % 3 === 0 || (i + 1) % 5 === 0 ? 'bg-[#231f20]' : 'bg-stone-100'
+          return `<i class="${cls} rounded-[1px]"></i>`
+        }).join('')
+        previewHTML = `
+          <div class="w-36 h-36 bg-white rounded-xl p-3 grid grid-cols-7 gap-1 mx-auto">${cells}</div>
+          <p class="font-black mt-5">${t('scan')}</p>`
+      } else if (this.metodePembayaran === 'cash') {
+        previewHTML = `
+          <i class="fa-solid fa-money-bill-wave text-6xl text-[#f5bd27]"></i>
+          <p class="font-black mt-5">${t('cash')}</p>`
+      } else if (this.metodePembayaran && this.metodePembayaran !== 'qris' && this.metodePembayaran !== 'cash') {
+        previewHTML = `
+          <i class="fa-solid fa-mobile-screen-button text-6xl text-[#f5bd27]"></i>
+          <p class="font-black mt-5">Follow the instruction<br>on your phone</p>`
+      } else {
+        previewHTML = `
+          <div class="text-white/40">
+            <i class="fa-solid fa-arrow-up text-3xl"></i>
+            <p class="font-bold mt-3">Pick a payment method</p>
+          </div>`
+      }
+      previewHTML += `<p class="mt-7 text-2xl font-black text-[#f5bd27]">${formatRupiah(this.getTotalHarga())}</p>`
+      preview.innerHTML = previewHTML
+    }
+
+    const simBtn = el.querySelector('[data-bind="simulateBtn"]')
+    if (simBtn) {
+      simBtn.disabled = !this.metodePembayaran
+    }
+  }
+
+  renderSukses() {
+    const el = document.querySelector('[data-screen="sukses"]')
+    if (!el) return
+    const t = (k) => this.terjemahkan(k)
+    const thankEl = el.querySelector('[data-bind="thankText"]')
+    if (thankEl) thankEl.textContent = t('thank')
+    const procEl = el.querySelector('[data-bind="processingText"]')
+    if (procEl) procEl.textContent = t('processing')
+  }
+
+  renderStruk() {
+    const el = document.querySelector('[data-screen="struk"]')
+    if (!el) return
+    const t = (k) => this.terjemahkan(k)
+
+    const queueEl = el.querySelector('[data-bind="queueText"]')
+    if (queueEl) queueEl.textContent = t('queue')
+
+    const nomorEl = el.querySelector('[data-bind="nomorAntrean"]')
+    if (nomorEl) nomorEl.textContent = this.nomorAntrean
+
+    const itemsEl = el.querySelector('[data-list="strukItems"]')
+    if (itemsEl) {
+      itemsEl.innerHTML = this.keranjang.map(baris => `
+        <div class="mb-3">
+          <div class="flex justify-between font-bold">
+            <span>${baris.nama} × ${baris.jumlah}</span>
+            <span>${formatRupiah(baris.harga * baris.jumlah)}</span>
+          </div>
+          <p class="text-[10px] text-stone-500 mt-1">${baris.kustomisasi.potongan} · ${baris.kustomisasi.minuman} · ${baris.kustomisasi.saus}</p>
+        </div>
+      `).join('')
+    }
+
+    const deliveryEl = el.querySelector('[data-bind="deliveryInfo"]')
+    if (deliveryEl) {
+      deliveryEl.textContent = this.metodePengiriman === 'meja'
+        ? t('served') + ' ' + this.nomorMeja
+        : t('counter')
+    }
+
+    const statusEl = el.querySelector('[data-bind="statusPembayaran"]')
+    if (statusEl) {
+      statusEl.textContent = this.metodePembayaran === 'cash' ? 'PENDING' : 'PAID'
+      statusEl.classList.toggle('text-[#268c57]', true)
+    }
+
+    const totalEl = el.querySelector('[data-bind="totalHargaStruk"]')
+    if (totalEl) totalEl.textContent = formatRupiah(this.getTotalHarga())
+  }
+
+  updateDetikStruk() {
+    const el = document.querySelector('[data-bind="detikStruk"]')
+    if (el) el.textContent = this.detikStruk
+  }
+
+  updateModal() {
+    const overlay = document.querySelector('[data-bind="modalOverlay"]')
+    if (!overlay) return
+    overlay.style.display = this.tampilModal ? '' : 'none'
+
+    if (this.tampilModal && this.itemSaatIni) {
+      const namaEl = overlay.querySelector('[data-bind="modalNama"]')
+      if (namaEl) namaEl.textContent = this.itemSaatIni.nama
+
+      overlay.querySelectorAll('[data-kustomisasi]').forEach(btn => {
+        const [jenis, nilai] = btn.dataset.kustomisasi.split('=')
+        const isActive = this.kustomisasi[jenis] === nilai
+        btn.classList.toggle('bg-[#d51f32]', isActive)
+        btn.classList.toggle('text-white', isActive)
+        btn.classList.toggle('bg-white', !isActive)
+        btn.classList.toggle('border', !isActive)
+        btn.classList.toggle('border-stone-200', !isActive)
       })
 
-      // Tutup modal dan tampilkan toast
-      this.tampilModal = false
-      this.tampilToast = true
-      mainkanSuara()
-
-      // Sembunyikan toast setelah 1.8 detik
-      setTimeout(() => {
-        this.tampilToast = false
-      }, 1800)
-    },
-
-    /**
-     * ubahJumlah — Menambah atau mengurangi jumlah item di keranjang
-     * Jika jumlah menjadi < 1, item dihapus dari keranjang.
-     * Jika keranjang kosong, kembali ke layar menu.
-     *
-     * @param {number} indeks — Index item di array keranjang
-     * @param {number} jumlah — Nilai perubahan (+1 atau -1)
-     */
-    ubahJumlah(indeks, jumlah) {
-      const jumlahBaru = this.keranjang[indeks].jumlah + jumlah
-
-      if (jumlahBaru < 1) {
-        // Hapus item dari keranjang jika jumlah < 1
-        this.keranjang.splice(indeks, 1)
-      } else {
-        // Update jumlah item
-        this.keranjang[indeks].jumlah = jumlahBaru
+      const addBtn = overlay.querySelector('[data-bind="addCartBtn"]')
+      if (addBtn) {
+        addBtn.disabled = !this.kustomisasi.potongan || !this.kustomisasi.minuman || !this.kustomisasi.saus
       }
+    }
+  }
 
-      mainkanSuara()
-
-      // Kembali ke menu jika keranjang kosong
-      if (!this.keranjang.length) {
-        this.navigasiKe('menu')
-      }
-    },
-
-    /**
-     * tekanKeypad — Menangani input nomor meja dari keypad virtual
-     * Mendukung 3 jenis input:
-     * - Angka (0-9): Menambahkan digit ke nomor meja (max 2 digit)
-     * - 'clear': Mereset nomor meja ke string kosong
-     * - 'delete': Menghapus digit terakhir
-     *
-     * @param {number|string} tombol — Tombol yang ditekan
-     */
-    tekanKeypad(tombol) {
-      if (tombol === 'clear') {
-        // Reset nomor meja
-        this.nomorMeja = ''
-      } else if (tombol === 'delete') {
-        // Hapus digit terakhir
-        this.nomorMeja = this.nomorMeja.slice(0, -1)
-      } else if (this.nomorMeja.length < 2) {
-        // Tambahkan digit baru (maksimal 2 digit)
-        this.nomorMeja += String(tombol)
-      }
-
-      mainkanSuara()
-    },
-
-    /**
-     * selesaikanPesanan — Memproses pesanan selesai
-     * Proses:
-     * 1. Putar suara konfirmasi
-     * 2. Buat nomor antrean acak (PD-100 sampai PD-999)
-     * 3. Pindah ke layar sukses
-     * 4. Setelah 2.5 detik, pindah ke layar struk
-     * 5. Mulai timer countdown struk (15 detik)
-     */
-    selesaikanPesanan() {
-      mainkanSuara()
-
-      // Buat nomor antrean acak: PD-100 hingga PD-999
-      const angkaAcak = Math.floor(Math.random() * 900) + 100
-      this.nomorAntrean = `PD-${String(angkaAcak)}`
-
-      // Pindah ke layar sukses
-      this.langkah = 'sukses'
-
-      // Setelah 2.5 detik, tampilkan struk
-      setTimeout(() => {
-        this.langkah = 'struk'
-        this.mulaiTimerStruk()
-      }, 2500)
-    },
-
-    /**
-     * mulaiTimerStruk — Memulai timer countdown untuk layar struk
-     * Countdown dimulai dari 15 detik. Saat mencapai 0,
-     * kiosk otomatis di-reset ke layar kunci.
-     */
-    mulaiTimerStruk() {
-      this.detikStruk = 15
-
-      // Hentikan timer sebelumnya (jika ada)
-      clearInterval(this.timerStruk)
-
-      // Mulai countdown baru
-      this.timerStruk = setInterval(() => {
-        this.detikStruk--
-
-        if (this.detikStruk <= 0) {
-          clearInterval(this.timerStruk)
-          this.aturUlang()
-        }
-      }, 1000) // 1.000 ms = 1 detik
-    },
-
-    /**
-     * aturUlang — Mereset semua state ke kondisi awal
-     * Dipanggil saat:
-     * - Timer idle timeout habis (60 detik tidak ada interaksi)
-     * - Timer struk habis (15 detik setelah struk ditampilkan)
-     * - Pengguna menekan tombol "Reset pesanan"
-     *
-     * Proses:
-     * 1. Bersihkan semua timer
-     * 2. Reset langkah ke 'kunci' (lockscreen)
-     * 3. Kosongkan keranjang
-     * 4. Reset semua state lain ke nilai default
-     */
-    aturUlang() {
-      // Bersihkan semua timer aktif
-      clearTimeout(this.timerIdle)
-      clearInterval(this.timerStruk)
-
-      // Reset semua state ke nilai awal
-      this.langkah = 'kunci'
-      this.keranjang = []
-      this.kategoriAktif = 'rekomendasi'
-      this.itemSaatIni = null
-      this.tampilModal = false
-      this.metodePengiriman = ''
-      this.nomorMeja = ''
-      this.metodePembayaran = ''
-      this.kustomisasi = { potongan: '', minuman: '', saus: '' }
-    },
+  updateToast() {
+    const toast = document.querySelector('[data-bind="toast"]')
+    if (!toast) return
+    toast.style.display = this.tampilToast ? '' : 'none'
+    const toastText = toast.querySelector('[data-bind="toastText"]')
+    if (toastText) toastText.textContent = this.terjemahkan('added')
   }
 }
 
-export default buatKomponenKiosk
+export default KioskApp
