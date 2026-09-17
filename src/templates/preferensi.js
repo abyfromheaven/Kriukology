@@ -11,7 +11,7 @@ const templatePreferensi = `
 
   <!-- Header: Tombol kembali + Logo -->
   <div class="flex justify-between items-center">
-    <button data-action="navigasiKe:kunci" class="text-sm font-bold text-stone-500">
+    <button data-action="navigasiKe:screensaver" class="text-sm font-bold text-stone-500">
       <i class="fa-solid fa-arrow-left mr-2"></i>
       <span data-text="back"></span>
     </button>

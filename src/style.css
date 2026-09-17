@@ -6,7 +6,7 @@
  * 1. Import library eksternal (Animate.css, Font Awesome, Google Fonts)
  * 2. Tailwind CSS directives
  * 3. Custom CSS variables dan base styles
- * 4. Typography system (Bebas Neue untuk display, Inter untuk body)
+ * 4. Typography system (Google Sans)
  * 5. Screen shell container (frame kiosk)
  * 6. Decorative patterns (grid noise, ticket edge, perforated)
  * 7. Food visual effects (radial gradient)
@@ -17,7 +17,7 @@
 /* ── Import Library Eksternal ────────────────────────────────────────── */
 @import 'animate.css';
 @import '@fortawesome/fontawesome-free/css/all.min.css';
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap');
 
 /* ── Tailwind CSS Directives ─────────────────────────────────────────── */
 @tailwind base;
@@ -28,26 +28,20 @@
 :root {
   color: #2a2424;
   background: #f6f1e8;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Google Sans', ui-sans-serif, system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
 body { min-width: 320px; margin: 0; }
-[x-cloak] { display: none !important; }
 
 /* ── Typography System ───────────────────────────────────────────────── */
-/* Display font: Bebas Neue — font condensed bold untuk headline dan CTA.
-   Digunakan untuk judul besar yang perlu terlihat dari kejauhan
-   seperti di layar kiosk touchscreen. */
+/* Google Sans digunakan untuk seluruh teks di project ini */
 .display {
-  font-family: 'Bebas Neue', Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+  font-family: 'Google Sans', Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
   letter-spacing: .06em;
 }
 
 /* ── Screen Shell: Frame Kiosk ──────────────────────────────────────── */
-/* Container utama kiosk dengan rasio 9:16 (portrait) seperti layar HP.
-   Max-height diatur agar muat di berbagai ukuran viewport.
-   Border radius dan box-shadow memberikan kesan premium. */
 .screen-shell {
   width: min(100%, 470px);
   aspect-ratio: 9 / 16;
@@ -71,7 +65,6 @@ body { min-width: 320px; margin: 0; }
 }
 
 /* ── Food Visual Effects ────────────────────────────────────────────── */
-/* Radial gradient yang meniru warna ayam goreng: kuning emas → oranye → merah */
 .food-orb {
   background: radial-gradient(circle at 30% 26%, #ffd66e 0 13%, #ffab27 14% 42%, #d92a29 43% 65%, #8b2020 66%);
 }
@@ -95,23 +88,22 @@ body { min-width: 320px; margin: 0; }
 button { -webkit-tap-highlight-color: transparent; }
 button:focus-visible { outline: 3px solid #f5bd27; outline-offset: 3px; }
 
-/* ── Lockscreen Typography ──────────────────────────────────────────── */
-/* Custom class untuk teks CTA di lockscreen.
-   Menggunakan Bebas Neue untuk kesan bold dan modern.
-   Text-shadow untuk keterbacaan di atas gambar. */
-.cta-layar-kunci {
-  font-family: 'Bebas Neue', Impact, sans-serif;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9), 0 0 40px rgba(0, 0, 0, 0.5);
-  letter-spacing: 0.15em;
+/* ── Poster Screensaver: Efek Sliding ──────────────────────────────── */
+/* Poster bergeser dari kanan ke kiri dengan transisi yang smooth */
+.poster-slide {
+  position: absolute;
+  inset: 0;
+  transform: translateX(100%);
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.poster-slide.aktif {
+  transform: translateX(0);
+}
+.poster-slide.sebelumnya {
+  transform: translateX(-100%) !important;
 }
 
-/* ── Poster Screensaver Transitions ─────────────────────────────────── */
-.poster-slide { opacity: 0; transition: opacity 1s ease-in-out; }
-.poster-slide.aktif { opacity: 1; }
-
 /* ── Accessibility: Reduced Motion ──────────────────────────────────── */
-/* Nonaktifkan semua animasi jika pengguna mengaktifkan
-   preferensi reduced motion di OSnya */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .01ms !important;

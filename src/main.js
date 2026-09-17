@@ -15,7 +15,6 @@ import './style.css'
 
 // ── Import Semua Template Layar ────────────────────────────────────────
 import templateLayarScreensaver from './templates/layar-screensaver.js'
-import templateLayarKunci from './templates/layar-kunci.js'
 import templatePreferensi from './templates/preferensi.js'
 import templateLayarMenu from './templates/layar-menu.js'
 import templateKeranjang from './templates/keranjang.js'
@@ -30,7 +29,6 @@ import KioskApp from './components/kiosk.js'
 // ── Gabungkan Semua Template ───────────────────────────────────────────
 const gabunganTemplate = `
   ${templateLayarScreensaver}
-  ${templateLayarKunci}
   ${templatePreferensi}
   ${templateLayarMenu}
   ${templateKeranjang}
@@ -47,9 +45,6 @@ document.querySelector('#app').innerHTML = `
   <section class="screen-shell relative overflow-hidden rounded-[2.1rem] bg-[#f7f1e8] border-[8px] border-[#231f20]"
            aria-label="PahaDada self-ordering kiosk">
 
-    <!-- Notch / Titik layar di bagian atas -->
-    <div class="absolute top-2 left-1/2 -translate-x-1/2 z-50 h-1.5 w-16 rounded-full bg-[#3b3434]"></div>
-
     ${gabunganTemplate}
 
   </section>
@@ -58,5 +53,4 @@ document.querySelector('#app').innerHTML = `
 `
 
 // ── Instansiasi KioskApp ──────────────────────────────────────────────
-// Mulai aplikasi Vanilla JS tanpa Alpine.js
 new KioskApp()

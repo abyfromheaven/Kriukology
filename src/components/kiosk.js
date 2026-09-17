@@ -6,7 +6,7 @@
  * PahaDada.id. Menggunakan pola State Machine untuk navigasi antar layar.
  *
  * Alur navigasi (state machine):
- * kunci → preferensi → menu → keranjang → pengiriman → pembayaran → sukses → struk → (auto-reset ke kunci)
+ * screensaver → preferensi → menu → keranjang → pengiriman → pembayaran → sukses → struk → (auto-reset ke screensaver)
  *
  * Arsitektur rendering:
  * - Semua template di-inject sebagai HTML string ke DOM
@@ -92,7 +92,7 @@ class KioskApp {
     this.navigasiKe('preferensi')
   }
 
-  /** Memulai rotasi poster screensaver */
+  /** Memulai rotasi poster screensaver dengan efek sliding */
   mulaiRotasiPoster() {
     clearInterval(this.timerPoster)
     let indeksSekarang = 0
@@ -100,9 +100,26 @@ class KioskApp {
     if (semuaPoster.length <= 1) return
 
     this.timerPoster = setInterval(() => {
+      // Poster saat ini keluar ke kiri
       semuaPoster[indeksSekarang].classList.remove('aktif')
+      semuaPoster[indeksSekarang].classList.add('sebelumnya')
+
+      // Poster berikutnya masuk dari kanan
       indeksSekarang = (indeksSekarang + 1) % semuaPoster.length
+      semuaPoster[indeksSekarang].classList.remove('sebelumnya')
       semuaPoster[indeksSekarang].classList.add('aktif')
+
+      // Setelah transisi selesai, reset poster yang keluar tanpa animasi
+      const indeksBersihkan = (indeksSekarang - 1 + semuaPoster.length) % semuaPoster.length
+      setTimeout(() => {
+        // Disable transisi agar snap ke posisi awal (kanan, off-screen)
+        semuaPoster[indeksBersihkan].style.transition = 'none'
+        semuaPoster[indeksBersihkan].classList.remove('sebelumnya')
+        // Force reflow agar posisi langsung diterapkan
+        semuaPoster[indeksBersihkan].offsetHeight
+        // Enable transisi lagi untuk cycle berikutnya
+        semuaPoster[indeksBersihkan].style.transition = ''
+      }, 850)
     }, 6000)
   }
 
@@ -117,7 +134,7 @@ class KioskApp {
   /** Reset timer idle timeout (60 detik) */
   resetWaktuIdle() {
     clearTimeout(this.timerIdle)
-    const layarTanpaIdle = ['screensaver', 'kunci', 'sukses', 'struk']
+    const layarTanpaIdle = ['screensaver', 'sukses', 'struk']
     if (!layarTanpaIdle.includes(this.langkah)) {
       this.timerIdle = setTimeout(() => this.aturUlang(), 60000)
     }

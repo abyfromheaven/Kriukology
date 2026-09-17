@@ -3,13 +3,14 @@
  * TEMPLATE: LAYAR SCREENSAVER
  * ==========================================================================
  * Layar pembuka (screensaver) yang menampilkan poster promosi secara
- * otomatis bergantian. Pengguna bisa menekan di mana saja pada layar
- * untuk memulai proses pemesanan.
+ * otomatis bergantian dengan efek sliding. Pengguna bisa menekan di mana
+ * saja pada layar untuk memulai proses pemesanan.
  *
  * Fitur:
- * - 3 poster promosi bergantian setiap 6 detik dengan efek fade
+ * - 3 poster promosi bergantian setiap 6 detik dengan efek sliding
  * - Teks "Klik Layar untuk Pesan" di bagian bawah
  * - Seluruh layar dapat diketuk untuk navigasi
+ * - Desain bersih tanpa watermark
  * ==========================================================================
  */
 
@@ -20,7 +21,7 @@ const daftarPoster = [
 ]
 
 const htmlPoster = daftarPoster.map((src, i) =>
-  `<img src="${src}" alt="Promosi PahaDada" class="poster-slide absolute inset-0 w-full h-full object-cover ${i === 0 ? 'aktif' : ''}">`
+  `<img src="${src}" alt="Promosi PahaDada" class="poster-slide ${i === 0 ? 'aktif' : ''}">`
 ).join('')
 
 const templateLayarScreensaver = `
@@ -31,14 +32,14 @@ const templateLayarScreensaver = `
     ${htmlPoster}
   </div>
 
-  <!-- Overlay gradient bawah untuk teks -->
-  <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/70 to-transparent"></div>
-
-  <!-- Teks ajakan -->
-  <div class="absolute bottom-8 left-0 right-0 text-center">
-    <p class="text-white/90 text-sm font-bold tracking-[.15em] uppercase animate-[pulse_2s_ease-in-out_infinite]">
+  <!-- Teks ajakan di bagian bawah -->
+  <div class="absolute bottom-0 left-0 right-0 z-10 px-8 pb-10 pt-20
+              flex flex-col items-center gap-3
+              pointer-events-none">
+    <p class="text-white/80 text-sm font-bold tracking-[.15em] uppercase">
       Klik Layar untuk Pesan
     </p>
+    <div class="w-10 h-0.5 bg-white/30 rounded-full"></div>
   </div>
 
 </div>
