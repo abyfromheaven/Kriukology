@@ -8,7 +8,7 @@
  *
  * Fitur:
  * - 3 poster promosi bergantian setiap 6 detik dengan efek sliding
- * - Teks "Klik Layar untuk Pesan" di bagian bawah
+ * - Teks "KETUK UNTUK MULAI" di bagian bawah
  * - Seluruh layar dapat diketuk untuk navigasi
  * - Desain bersih tanpa watermark
  * ==========================================================================
@@ -38,13 +38,13 @@ const templateLayarScreensaver = `
               pointer-events-none"></div>
 
   <!-- Teks ajakan di bagian bawah -->
-  <div class="absolute bottom-0 left-0 right-0 z-20 px-8 pb-10 pt-20
-              flex flex-col items-center gap-3
+  <div class="absolute bottom-0 left-0 right-0 z-20 px-8 pb-11 pt-20
+              flex flex-col items-center
               pointer-events-none">
-    <p class="animate-pulse text-white text-sm font-bold tracking-[.15em] uppercase">
+    <p class="animate-pulse text-white text-xl font-semibold tracking-normal uppercase
+              drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
       KETUK UNTUK MULAI
     </p>
-    <div class="w-10 h-0.5 bg-white/30 rounded-full"></div>
   </div>
 
 </div>

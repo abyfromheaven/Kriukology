@@ -6,7 +6,7 @@
  * 1. Import library eksternal (Animate.css, Font Awesome, Google Fonts)
  * 2. Tailwind CSS directives
  * 3. Custom CSS variables dan base styles
- * 4. Typography system (Google Sans)
+ * 4. Typography system (Geist Sans)
  * 5. Screen shell container (frame kiosk)
  * 6. Decorative patterns (grid noise, ticket edge, perforated)
  * 7. Food visual effects (radial gradient)
@@ -17,7 +17,7 @@
 /* ── Import Library Eksternal ────────────────────────────────────────── */
 @import 'animate.css';
 @import '@fortawesome/fontawesome-free/css/all.min.css';
-@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&display=swap');
 
 /* ── Tailwind CSS Directives ─────────────────────────────────────────── */
 @tailwind base;
@@ -28,16 +28,16 @@
 :root {
   color: #2a2424;
   background: #f6f1e8;
-  font-family: 'Google Sans', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Geist', ui-sans-serif, system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
 body { min-width: 320px; margin: 0; }
 
 /* ── Typography System ───────────────────────────────────────────────── */
-/* Google Sans digunakan untuk seluruh teks di project ini */
+/* Geist Sans digunakan untuk seluruh teks di project ini */
 .display {
-  font-family: 'Google Sans', Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+  font-family: 'Geist', Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
   letter-spacing: .06em;
 }
 
