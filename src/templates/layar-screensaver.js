@@ -14,9 +14,9 @@
  */
 
 const daftarPoster = [
-  '/assets/poster/poster1.png',
-  '/assets/poster/poster2.png',
-  '/assets/poster/poster3.png',
+  '/assets/poster/poster1.webp',
+  '/assets/poster/poster2.webp',
+  '/assets/poster/poster3.webp',
 ]
 
 const htmlPoster = daftarPoster.map((src, i) =>
