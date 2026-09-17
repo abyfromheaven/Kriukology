@@ -93,6 +93,10 @@ button:focus-visible { outline: 3px solid #f5bd27; outline-offset: 3px; }
 .poster-slide {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
   transform: translateX(100%);
   transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
