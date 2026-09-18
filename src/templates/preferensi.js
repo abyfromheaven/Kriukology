@@ -42,15 +42,8 @@ const templatePreferensi = `
         class="pref-order-card group flex flex-col items-center justify-center
                w-[155px] h-[175px] rounded-3xl transition-all duration-300 ease-out cursor-pointer
                bg-white shadow-[0_2px_16px_rgba(0,0,0,0.08)]">
-        <!-- Dummy Icon -->
-        <div class="pref-card-icon w-20 h-20 rounded-2xl bg-[#f5f5f5] flex items-center justify-center mb-4 transition-all duration-300">
-          <svg class="w-12 h-12 text-[#555] transition-colors duration-300" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Fork -->
-            <path d="M18 10v10c0 4 2 6 6 7v27h2V27c4-1 6-3 6-7V10h-2v9c0 1-1 2-2 2s-2-1-2-2V10h-2v9c0 1-1 2-2 2s-2-1-2-2V10h-2z" fill="currentColor"/>
-            <!-- Knife -->
-            <path d="M40 10c0 0-4 6-4 14c0 4 2 6 4 7v23h2V31c2-1 4-3 4-7c0-8-4-14-4-14h-2z" fill="currentColor"/>
-          </svg>
-        </div>
+        <!-- Dine In Icon -->
+        <img src="/assets/Dine In.webp" alt="Dine In" class="w-25 h-25 object-contain mb-3 transition-all duration-300 group-hover:scale-105" />
         <span class="pref-card-label text-[#444] font-bold text-sm tracking-wide transition-colors duration-300" data-text="dine"></span>
       </button>
 
@@ -59,19 +52,8 @@ const templatePreferensi = `
         class="pref-order-card group flex flex-col items-center justify-center
                w-[155px] h-[175px] rounded-3xl transition-all duration-300 ease-out cursor-pointer
                bg-white shadow-[0_2px_16px_rgba(0,0,0,0.08)]">
-        <!-- Dummy Icon -->
-        <div class="pref-card-icon w-20 h-20 rounded-2xl bg-[#f5f5f5] flex items-center justify-center mb-4 transition-all duration-300">
-          <svg class="w-12 h-12 text-[#555] transition-colors duration-300" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Paper bag -->
-            <path d="M16 22h32l-3 32H19L16 22z" fill="currentColor" opacity="0.3"/>
-            <path d="M16 22h32l-3 32H19L16 22z" stroke="currentColor" stroke-width="2" fill="none"/>
-            <!-- Bag top fold -->
-            <path d="M20 22V18c0-6 5-10 12-10s12 4 12 10v4" stroke="currentColor" stroke-width="2" fill="none"/>
-            <!-- Small chicken leg icon inside -->
-            <circle cx="32" cy="36" r="5" fill="currentColor" opacity="0.5"/>
-            <path d="M32 31v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </div>
+        <!-- Take Away Icon -->
+        <img src="/assets/Take Away.webp" alt="Take Away" class="w-24 h-24 object-contain mb-3 transition-all duration-300 group-hover:scale-105" />
         <span class="pref-card-label text-[#444] font-bold text-sm tracking-wide transition-colors duration-300" data-text="take"></span>
       </button>
 
