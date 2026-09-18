@@ -1,6 +1,6 @@
 /**
  * ==========================================================================
- * ENTRY POINT: APLIKASI KIOSK PAHADADA.ID
+ * ENTRY POINT: APLIKASI KIOSK KRIOKOLOGY
  * ==========================================================================
  * File ini adalah titik masuk utama aplikasi.
  * 1. Import style CSS global
@@ -43,7 +43,7 @@ document.querySelector('#app').innerHTML = `
 <div class="min-h-screen bg-[#f6f1e8] p-3 sm:p-5 flex items-center justify-center">
 
   <section class="screen-shell relative overflow-hidden rounded-[2.1rem] bg-[#f7f1e8] border-[8px] border-[#231f20]"
-           aria-label="PahaDada self-ordering kiosk">
+           aria-label="Kriukology self-ordering kiosk">
 
     ${gabunganTemplate}
 

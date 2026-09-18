@@ -2,7 +2,7 @@
  * ==========================================================================
  * DATA METODE PEMBAYARAN
  * ==========================================================================
- * Berisi daftar metode pembayaran yang tersedia di kiosk PahaDada.id.
+ * Berisi daftar metode pembayaran yang tersedia di kiosk Kriukology.
  * Pengguna dapat memilih salah satu metode sebelum menyelesaikan pesanan.
  *
  * Metode yang tersedia:

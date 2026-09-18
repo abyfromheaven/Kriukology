@@ -16,7 +16,7 @@ const templatePreferensi = `
       <span data-text="back"></span>
     </button>
     <div class="font-black text-xl text-[#d51f32]">
-      PahaDada<span class="text-[#f5bd27]">.id</span>
+      Kriuk<span class="text-[#f5bd27]">ology</span>
     </div>
   </div>
 

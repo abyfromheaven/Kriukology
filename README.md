@@ -1,4 +1,4 @@
-# PahaDada.id — Self-Ordering Kiosk
+# Kriukology — Self-Ordering Kiosk
 
 Prototype frontend interaktif untuk alur pemesanan mandiri restoran cepat saji. Dibuat dari PRD proyek menggunakan Vite, Tailwind CSS, Alpine.js, dan Animate.css.
 

@@ -14,7 +14,7 @@ const templateStruk = `
     <!-- Header Struk -->
     <div class="text-center border-b-2 border-dashed border-stone-300 pb-5">
       <p class="font-black text-2xl text-[#d51f32]">
-        PahaDada<span class="text-[#f5bd27]">.id</span>
+        Kriuk<span class="text-[#f5bd27]">ology</span>
       </p>
       <p class="text-[10px] tracking-[.2em] mt-1">STRUK DIGITAL</p>
       <p class="text-xs mt-4" data-bind="queueText"></p>

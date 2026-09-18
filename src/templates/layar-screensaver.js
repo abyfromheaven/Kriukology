@@ -21,7 +21,7 @@ const daftarPoster = [
 ]
 
 const htmlPoster = daftarPoster.map((src, i) =>
-  `<img src="${src}" alt="Promosi PahaDada" class="poster-slide ${i === 0 ? 'aktif' : ''}">`
+  `<img src="${src}" alt="Promosi Kriukology" class="poster-slide ${i === 0 ? 'aktif' : ''}">`
 ).join('')
 
 const templateLayarScreensaver = `

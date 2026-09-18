@@ -13,7 +13,7 @@ const templateLayarMenu = `
   <header class="h-20 shrink-0 flex items-center justify-between px-5 border-b border-stone-200">
     <div>
       <div class="font-black text-xl text-[#d51f32]">
-        PahaDada<span class="text-[#f5bd27]">.id</span>
+        Kriuk<span class="text-[#f5bd27]">ology</span>
       </div>
       <p class="text-[10px] text-stone-500 uppercase tracking-widest"
          data-bind="tipePesanan"></p>

@@ -1,5 +1,5 @@
 # 1. Project Overview & Objectives
-- **Nama Produk:** PahaDada.id (Sebuah aplikasi _Self-Ordering Kiosk_ / Kasir Mandiri berbasis Web Restoran Cepat Saji).
+- **Nama Produk:** Kriukology (Sebuah aplikasi _Self-Ordering Kiosk_ / Kasir Mandiri berbasis Web Restoran Cepat Saji).
 - **Problem Statement:** 
 	1. **Antrean Panjang & Konvensional:**
         Proses pemesanan makanan di kasir konvensional seringkali memicu antrean panjang yang membuat pelanggan mengalami _mager_ (malas gerak/antre) dan membuang waktu.
@@ -18,7 +18,7 @@
     3. **Manajemen Restoran Lokal (Dunia Nyata):** Sebagai solusi digitalisasi bagi pemilik usaha kuliner cepat saji lokal yang ingin meningkatkan efisiensi operasional tanpa risiko kebocoran data sensitif.
 ---
 # 2. Tech Stack & Architecture Constraints (Batasan Teknologi)
-## 1. Komponen Utama Tech Stack PahaDada.id
+## 1. Komponen Utama Tech Stack Kriukology
 
 Aplikasi dirancang menggunakan arsitektur Hybrid Core Web Standards, menggabungkan ketangguhan _framework_ di sisi _backend_ dengan kesederhanaan bahasa murni (_native_) di sisi _frontend_ [local].
 
@@ -146,7 +146,7 @@ Berikut adalah visualisasi alur sistem dari awal hingga akhir transaksi:
 ### 2. POS Kasir
 #### 1. User Story
 
-- Sebagai: Manajemen Restoran / Kasir Utama PahaDada.id.
+- Sebagai: Manajemen Restoran / Kasir Utama Kriukology.
 - Saya ingin: Mengelola master data produk (menu paket, harga, stok, gambar) dan memantau pesanan yang masuk dari mesin kiosk secara _real-time_.
 - Agar: Operasional restoran berjalan lancar, menu di layar kiosk selalu diperbarui, dan pesanan pelanggan dapat diproses serta dipanggil sesuai nomor antrean.
 #### 2. Core Features (Fitur Utama Dashboard Admin)
@@ -248,10 +248,10 @@ Mencatat rincian item paket yang dibeli. Karena alur pemesanan menginginkan pemi
 
 ## 2. Folder Structure Plan (Laravel Standard)
 
-Berikut adalah peta struktur folder proyek PahaDada.id agar penempatan file komponen teks, grafis, multimedia, dan logika _backend_ konsisten:
+Berikut adalah peta struktur folder proyek Kriukology agar penempatan file komponen teks, grafis, multimedia, dan logika _backend_ konsisten:
 
 ```text
-pahadada-kiosk/
+kriukology-kiosk/
 ├── app/
 │   ├── Http/
 │   │   └── Controllers/
@@ -265,10 +265,10 @@ pahadada-kiosk/
 │   ├── database.sqlite                  # File database utama (SQLite)
 │   ├── migrations/                      # File skema pembuatan tabel
 │   └── seeders/
-│       └── ProductSeeder.php            # Data dummy awal menu PahaDada.id
+│       └── ProductSeeder.php            # Data dummy awal menu Kriukology
 ├── public/
 │   └── assets/
-│       ├── images/                      # Aset Grafis (Foto menu ayam, logo PahaDada.id)
+│       ├── images/                      # Aset Grafis (Foto menu ayam, logo Kriukology)
 │       └── sounds/                      # Aset Multimedia Audio (tap.mp3, sukses.mp3, dingdong.mp3)
 ├── resources/
 │   ├── css/
@@ -408,7 +408,7 @@ Seluruh _routing_ menggunakan metode _Named Routes_ bawaan Laravel untuk memperm
 - UI/UX Component Requirements:
     
     - Halaman pilihan metode bayar: QRIS, E-Wallet, M-Banking, Debit Card, dan Tunai di Kasir.
-    - Area visual interaktif sesuai metode yang dipilih (Contoh: Menampilkan gambar QR Code statis tiruan PahaDada.id berlabel nominal total harga belanja untuk opsi QRIS, atau animasi mesin gesek EDC untuk opsi Debit).
+    - Area visual interaktif sesuai metode yang dipilih (Contoh: Menampilkan gambar QR Code statis tiruan Kriukology berlabel nominal total harga belanja untuk opsi QRIS, atau animasi mesin gesek EDC untuk opsi Debit).
     - Tombol rahasia berukuran kecil/minimalis berwarna hijau di pojok bawah bertuliskan "Simulasi Sukses" (sebagai pemicu aksi backend saat kamu demo sidang).
     - _Splash Screen Thank You_ berwarna merah penuh dengan teks "Terima Kasih, Pesanan Anda Sedang Diproses".
     - Komponen visual Struk Belanja Digital (_On-Screen Receipt_) rapi yang muncul di tengah layar setelah splash screen (memuat Nomor Antrean besar harian, Detail Item Paket, Nomor Meja/Keterangan Ambil di Kasir, dan Status Pembayaran).
@@ -433,10 +433,10 @@ Seluruh _routing_ menggunakan metode _Named Routes_ bawaan Laravel untuk memperm
 
 ## Modul 2: Admin Dashboard One-Page (3-Tab Layout)
 
-- User Story: "Sebagai pengelola merchant PahaDada.id, saya ingin mengelola katalog makanan, memantau pesanan masuk untuk dapur, serta memperbarui antrean di satu halaman terpusat yang praktis."
+- User Story: "Sebagai pengelola merchant Kriukology, saya ingin mengelola katalog makanan, memantau pesanan masuk untuk dapur, serta memperbarui antrean di satu halaman terpusat yang praktis."
 - UI/UX Component Requirements:
     
-    - Bilah navigasi atas (_Header Admin_) menampilkan nama brand PahaDada.id - Back Office Control.
+    - Bilah navigasi atas (_Header Admin_) menampilkan nama brand Kriukology - Back Office Control.
     - Bilah navigasi tab horizontal menggunakan utilitas Tailwind CSS untuk berpindah antar-tiga tampilan utama: [Tab 1: Manajemen Produk], [Tab 2: Kitchen Display System (KDS)], dan [Tab 3: Monitor Antrean Lobi].
     
 

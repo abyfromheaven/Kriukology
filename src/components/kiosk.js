@@ -3,7 +3,7 @@
  * KOMPONEN VANILLA JS: KIOSK
  * ==========================================================================
  * Kelas utama yang mengelola seluruh state dan logika aplikasi kiosk
- * PahaDada.id. Menggunakan pola State Machine untuk navigasi antar layar.
+ * Kriukology. Menggunakan pola State Machine untuk navigasi antar layar.
  *
  * Alur navigasi (state machine):
  * screensaver → preferensi → menu → keranjang → pengiriman → pembayaran → sukses → struk → (auto-reset ke screensaver)

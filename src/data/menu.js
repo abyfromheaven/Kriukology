@@ -2,7 +2,7 @@
  * ==========================================================================
  * DATA MENU
  * ==========================================================================
- * Berisi daftar semua item menu yang tersedia di kiosk PahaDada.id.
+ * Berisi daftar semua item menu yang tersedia di kiosk Kriukology.
  * Setiap menu memiliki properti: id, nama, harga, kategori, emoji, tag, dan deskripsi.
  *
  * Struktur data menu:
