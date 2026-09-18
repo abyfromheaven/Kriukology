@@ -107,6 +107,90 @@ button:focus-visible { outline: 3px solid #f5bd27; outline-offset: 3px; }
   transform: translateX(-100%) !important;
 }
 
+/* ── Preference Page: Flag Buttons ──────────────────────────────────── */
+/* Flag default: slightly smaller, muted */
+.pref-flag-btn .pref-flag {
+  transform: scale(0.85);
+  filter: saturate(0.25) brightness(1.1) opacity(0.5);
+  border-color: transparent;
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Flag active: enlarged, fully colored, red outline */
+.pref-flag-btn.flag-aktif .pref-flag {
+  transform: scale(1.15);
+  filter: saturate(1) brightness(1);
+  border-color: #d51f32;
+  box-shadow: 0 0 0 3px rgba(213, 31, 50, 0.25),
+              0 6px 20px rgba(213, 31, 50, 0.3);
+}
+
+/* Hover on inactive flags */
+.pref-flag-btn:not(.flag-aktif):hover .pref-flag {
+  transform: scale(0.95);
+  filter: saturate(0.5) brightness(1) opacity(0.75);
+}
+
+/* ── Preference Page: Order Type Cards ─────────────────────────────── */
+.pref-order-card {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pref-order-card.card-aktif {
+  background: linear-gradient(145deg, #d51f32, #b81828) !important;
+  transform: scale(1.03);
+  box-shadow: 0 8px 32px rgba(213, 31, 50, 0.35);
+}
+
+.pref-order-card.card-aktif .pref-card-icon {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.pref-order-card.card-aktif .pref-card-icon svg {
+  color: #ffffff !important;
+}
+
+.pref-order-card.card-aktif .pref-card-label {
+  color: #ffffff !important;
+}
+
+.pref-order-card:not(.card-aktif):hover {
+  background: #fafafa !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12) !important;
+  transform: scale(1.01);
+}
+
+/* ── Preference Page: Entrance Animations ──────────────────────────── */
+@keyframes pref-fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pref-scale-in {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+[data-screen="preferensi"] .pref-logo-wrapper {
+  animation: pref-scale-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+}
+
+[data-screen="preferensi"] .pref-welcome-title {
+  animation: pref-fade-up 0.5s ease-out 0.25s both;
+}
+
+[data-screen="preferensi"] .pref-welcome-sub {
+  animation: pref-fade-up 0.5s ease-out 0.35s both;
+}
+
+[data-screen="preferensi"] .pref-order-card:nth-child(1) {
+  animation: pref-fade-up 0.5s ease-out 0.4s both;
+}
+
+[data-screen="preferensi"] .pref-order-card:nth-child(2) {
+  animation: pref-fade-up 0.5s ease-out 0.5s both;
+}
+
 /* ── Accessibility: Reduced Motion ──────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

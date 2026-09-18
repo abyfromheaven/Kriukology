@@ -11,12 +11,17 @@ const templateLayarMenu = `
 
   <!-- Header -->
   <header class="h-20 shrink-0 flex items-center justify-between px-5 border-b border-stone-200">
-    <div>
-      <div class="font-black text-xl text-[#d51f32]">
-        Kriuk<span class="text-[#f5bd27]">ology</span>
+    <div class="flex items-center gap-3">
+      <button data-action="navigasiKe:preferensi" class="h-9 w-9 rounded-full bg-stone-100 flex items-center justify-center text-stone-500">
+        <i class="fa-solid fa-arrow-left text-sm"></i>
+      </button>
+      <div>
+        <div class="font-black text-xl text-[#d51f32]">
+          Kriuk<span class="text-[#f5bd27]">ology</span>
+        </div>
+        <p class="text-[10px] text-stone-500 uppercase tracking-widest"
+           data-bind="tipePesanan"></p>
       </div>
-      <p class="text-[10px] text-stone-500 uppercase tracking-widest"
-         data-bind="tipePesanan"></p>
     </div>
     <button data-action="aturUlang" class="text-xs font-bold text-stone-500">
       <i class="fa-solid fa-rotate-left mr-1"></i>

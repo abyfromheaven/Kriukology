@@ -29,7 +29,7 @@ class KioskApp {
     // ── State Aplikasi ─────────────────────────────────────────────────
     this.langkah = 'screensaver'
     this.bahasa = 'id'
-    this.tipePesanan = 'dine'
+    this.tipePesanan = ''
     this.kategoriAktif = 'rekomendasi'
     this.keranjang = []
     this.itemSaatIni = null
@@ -126,6 +126,9 @@ class KioskApp {
   /** Navigasi ke layar tertentu */
   navigasiKe(langkahBerikutnya) {
     mainkanSuara()
+    if (langkahBerikutnya === 'preferensi') {
+      this.tipePesanan = ''
+    }
     this.langkah = langkahBerikutnya
     this.resetWaktuIdle()
     this.render()
@@ -286,6 +289,14 @@ class KioskApp {
         this.tipePesanan = argumen
         mainkanSuara()
         this.render()
+        break
+
+      case 'setTipePesananDanLanjut':
+        this.tipePesanan = argumen
+        mainkanSuara()
+        this.render()
+        // Brief delay for visual feedback before navigating
+        setTimeout(() => this.navigasiKe('menu'), 250)
         break
 
       case 'setKategori':
@@ -526,23 +537,29 @@ class KioskApp {
   renderPreferensi() {
     const el = document.querySelector('[data-screen="preferensi"]')
     if (!el) return
+    const t = (kunci) => this.terjemahkan(kunci)
 
-    // Perbarui status aktif tombol bahasa
+    // Perbarui subtitle dengan highlight merah
+    const subEl = el.querySelector('[data-bind="welcomeSub"]')
+    if (subEl) {
+      const teks = t('welcomeSub')
+      if (this.bahasa === 'id') {
+        subEl.innerHTML = teks.replace('berkriuk!', '<span class="text-[#d51f32]">berkriuk!</span>')
+      } else {
+        subEl.innerHTML = teks.replace('eat?', '<span class="text-[#d51f32]">eat?</span>')
+      }
+    }
+
+    // Perbarui status aktif tombol bendera bahasa
     el.querySelectorAll('[data-aktif-bahasa]').forEach(tombol => {
       const aktif = tombol.dataset.aktifBahasa === this.bahasa
-      tombol.classList.toggle('border-[#d51f32]', aktif)
-      tombol.classList.toggle('bg-red-50', aktif)
-      tombol.classList.toggle('border-stone-200', !aktif)
+      tombol.classList.toggle('flag-aktif', aktif)
     })
 
     // Perbarui status aktif tombol tipe pesanan
     el.querySelectorAll('[data-aktif-tipe]').forEach(tombol => {
-      const aktif = tombol.dataset.aktifTipe === this.tipePesanan
-      tombol.classList.toggle('bg-[#d51f32]', aktif)
-      tombol.classList.toggle('text-white', aktif)
-      tombol.classList.toggle('bg-white', !aktif)
-      tombol.classList.toggle('border', !aktif)
-      tombol.classList.toggle('border-stone-200', !aktif)
+      const aktif = this.tipePesanan && tombol.dataset.aktifTipe === this.tipePesanan
+      tombol.classList.toggle('card-aktif', aktif)
     })
   }
 
