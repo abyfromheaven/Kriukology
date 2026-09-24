@@ -2,43 +2,52 @@
  * ==========================================================================
  * DATA KATEGORI MENU
  * ==========================================================================
- * Berisi daftar kategori yang digunakan untuk memfilter menu di layar menu.
- * Setiap kategori memiliki id, ikon Font Awesome, dan label ganda (ID & EN).
- *
- * Kategori tersedia:
- * 1. rekomendasi — Menu terlaris dan paling direkomendasikan
- * 2. paket       — Paket combo dengan harga hemat
- * 3. alacarte    — Menu satuan / a la carte
- * 4. minuman     — Berbagai pilihan minuman
- * 5. cemilan     — Snack dan cemilan ringan
+ * Berisi 7 kategori KFC utama yang digunakan di kiosk Kriukology:
+ * 1. promotion  — Promotion / Promo Spesial
+ * 2. chicken    — Chicken / Ayam Goreng Krispi
+ * 3. bucket     — Bucket & Sharing
+ * 4. burger     — Bowl / Burger
+ * 5. snack      — Snack / Sides
+ * 6. kids       — Kids Meal
+ * 7. dessert    — Dessert / Makanan Penutup
  * ==========================================================================
  */
 
 const daftarKategori = [
   {
-    id: 'rekomendasi',
-    icon: 'fa-solid fa-fire',
-    label: { id: 'Rekomen', en: 'Top picks' },
+    id: 'promotion',
+    icon: 'fa-solid fa-tags',
+    label: { id: 'Promotion', en: 'Promotion' },
   },
   {
-    id: 'paket',
-    icon: 'fa-solid fa-box',
-    label: { id: 'Paket', en: 'Combos' },
-  },
-  {
-    id: 'alacarte',
+    id: 'chicken',
     icon: 'fa-solid fa-drumstick-bite',
-    label: { id: 'Satuan', en: 'A la carte' },
+    label: { id: 'Chicken', en: 'Chicken' },
   },
   {
-    id: 'minuman',
-    icon: 'fa-solid fa-glass-water',
-    label: { id: 'Minum', en: 'Drinks' },
+    id: 'bucket',
+    icon: 'fa-solid fa-layer-group',
+    label: { id: 'Bucket & Sharing', en: 'Bucket & Sharing' },
   },
   {
-    id: 'cemilan',
+    id: 'burger',
+    icon: 'fa-solid fa-burger',
+    label: { id: 'Bowl / Burger', en: 'Bowl / Burger' },
+  },
+  {
+    id: 'snack',
     icon: 'fa-solid fa-cookie-bite',
-    label: { id: 'Cemilan', en: 'Snacks' },
+    label: { id: 'Snack / Sides', en: 'Snack / Sides' },
+  },
+  {
+    id: 'kids',
+    icon: 'fa-solid fa-child',
+    label: { id: 'Kids Meal', en: 'Kids Meal' },
+  },
+  {
+    id: 'dessert',
+    icon: 'fa-solid fa-ice-cream',
+    label: { id: 'Dessert', en: 'Dessert' },
   },
 ]
 

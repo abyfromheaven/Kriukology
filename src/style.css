@@ -43,9 +43,10 @@ body { min-width: 320px; margin: 0; }
 
 /* ── Screen Shell: Frame Kiosk ──────────────────────────────────────── */
 .screen-shell {
-  width: min(100%, 470px);
+  width: min(100%, 560px);
+  height: 920px;
+  max-height: calc(100vh - 16px);
   aspect-ratio: 9 / 16;
-  max-height: calc(100vh - 42px);
   box-shadow: 0 26px 80px #3a171933;
 }
 
@@ -182,14 +183,14 @@ button:focus-visible { outline: 3px solid #f5bd27; outline-offset: 3px; }
 
 /* ── Layar Menu: Sidebar Utility Dock ───────────────────────────────── */
 .menu-category-list {
-  padding-bottom: 88px;
+  padding-bottom: 96px;
   transition: padding-bottom 0.38s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .menu-utility-dock {
   position: absolute;
-  left: 8px;
-  right: 8px;
+  left: 6px;
+  right: 6px;
   bottom: 12px;
   z-index: 40;
   display: flex;
@@ -197,13 +198,11 @@ button:focus-visible { outline: 3px solid #f5bd27; outline-offset: 3px; }
   gap: 8px;
   padding: 0;
   background: transparent;
-  box-shadow: none;
-  transform: translateY(0);
   transition: bottom 0.38s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 [data-screen="menu"].punya-pesanan .menu-category-list {
-  padding-bottom: 244px;
+  padding-bottom: 240px !important;
 }
 
 [data-screen="menu"].punya-pesanan .menu-utility-dock {
@@ -211,14 +210,17 @@ button:focus-visible { outline: 3px solid #f5bd27; outline-offset: 3px; }
 }
 
 [data-screen="menu"] .menu-flag-btn .menu-flag {
-  transform: scale(0.84);
-  box-shadow: 0 3px 9px rgba(42, 36, 36, 0.12);
+  transform: scale(0.88);
+  filter: saturate(0.3) brightness(1.05) opacity(0.6);
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 [data-screen="menu"] .menu-flag-btn.flag-aktif .menu-flag {
-  transform: scale(1.04);
-  box-shadow: 0 0 0 2px rgba(213, 31, 50, 0.16),
-              0 4px 10px rgba(213, 31, 50, 0.2);
+  transform: scale(1.08);
+  filter: saturate(1) brightness(1) opacity(1);
+  border-color: #d51f32;
+  box-shadow: 0 0 0 2px rgba(213, 31, 50, 0.25),
+              0 4px 12px rgba(213, 31, 50, 0.25);
 }
 
 /* ── Layar Menu (rebuild): Status Pesanan Slide In/Out ──────────────── */

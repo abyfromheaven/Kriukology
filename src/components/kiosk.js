@@ -30,7 +30,7 @@ class KioskApp {
     this.langkah = 'screensaver'
     this.bahasa = 'id'
     this.tipePesanan = ''
-    this.kategoriAktif = 'rekomendasi'
+    this.kategoriAktif = 'promotion'
     this.keranjang = []
     this.tampilKonfirmasiBatal = false
     this.metodePengiriman = ''
@@ -268,7 +268,7 @@ class KioskApp {
     clearInterval(this.timerStruk)
     this.langkah = 'screensaver'
     this.keranjang = []
-    this.kategoriAktif = 'rekomendasi'
+    this.kategoriAktif = 'promotion'
     this.tampilKonfirmasiBatal = false
     this.metodePengiriman = ''
     this.nomorMeja = ''
@@ -440,22 +440,23 @@ class KioskApp {
     const kelasTeks = aktif
       ? 'text-[#d51f32] font-black'
       : 'text-[#231f20] font-semibold opacity-85 hover:opacity-100'
+    const bgAktif = aktif ? 'bg-red-50/80 border-l-4 border-[#d51f32]' : 'hover:bg-stone-50'
     return `
       <button data-action="setKategori:${kategori.id}"
-        class="w-full px-2 py-2 flex items-center gap-2.5 text-left transition rounded-lg hover:bg-stone-50">
+        class="w-full px-2 py-2 flex items-center gap-2.5 text-left transition rounded-lg ${bgAktif}">
         <i class="${kategori.icon} text-[#d51f32] text-base shrink-0 w-5 text-center"></i>
         <span class="text-[11px] leading-tight ${kelasTeks}">${kategori.label[this.bahasa]}</span>
       </button>`
   }
 
-  /** Membuat HTML kartu item menu — 3 state: default (Tambah), dipilih (+/-), stok habis */
+  /** Membuat HTML kartu item menu — lonjong ke bawah (vertical portrait), foto Unsplash besar eye-catching, ultra minimalist & clean */
   buatHTMLItemMenu(item) {
     const qty = this.dapatkanQtyItem(item.id)
     const habis = Boolean(item.habis)
 
     const overlayHabis = habis
-      ? `<div class="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center rounded-t-[28px] z-10">
-           <span class="text-white font-black text-xs tracking-wider uppercase px-2 py-1 bg-black/40 rounded" data-text="stockOut">${this.terjemahkan('stockOut')}</span>
+      ? `<div class="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center rounded-t-2xl z-10">
+           <span class="text-white font-black text-[10px] tracking-wider uppercase px-2 py-0.5 bg-black/50 rounded" data-text="stockOut">${this.terjemahkan('stockOut')}</span>
          </div>`
       : ''
 
@@ -463,41 +464,44 @@ class KioskApp {
     if (habis) {
       kontrolBawah = `
         <button disabled
-          class="w-full rounded-xl py-2 bg-stone-100 text-stone-400 font-bold text-xs border border-stone-200 cursor-not-allowed">
+          class="w-full h-8 rounded-xl bg-stone-100 text-stone-400 font-bold text-[11px] border border-stone-200 cursor-not-allowed">
           <span data-text="add">${this.terjemahkan('add')}</span>
         </button>`
     } else if (qty > 0) {
       kontrolBawah = `
-        <div class="flex items-center justify-around py-0.5">
+        <div class="flex items-center justify-between h-8 px-1.5 bg-red-50/70 rounded-xl border border-[#d51f32]/20">
           <button data-action="kurangiItem:${item.id}" aria-label="kurangi"
-            class="h-8 w-8 shrink-0 rounded-full border-2 border-[#d51f32] text-[#d51f32] flex items-center justify-center bg-white active:bg-[#d51f32]/10 transition">
-            <i class="fa-solid fa-minus text-xs"></i>
+            class="h-6 w-6 shrink-0 rounded-lg bg-white border border-[#d51f32] text-[#d51f32] flex items-center justify-center active:scale-95 transition shadow-xs">
+            <i class="fa-solid fa-minus text-[10px]"></i>
           </button>
-          <span class="font-black text-lg text-[#d51f32]">${qty}</span>
+          <span class="font-black text-xs text-[#d51f32] tabular-nums">${qty}</span>
           <button data-action="tambahItem:${item.id}" aria-label="tambah"
-            class="h-8 w-8 shrink-0 rounded-full border-2 border-[#d51f32] text-[#d51f32] flex items-center justify-center bg-white active:bg-[#d51f32]/10 transition">
-            <i class="fa-solid fa-plus text-xs"></i>
+            class="h-6 w-6 shrink-0 rounded-lg bg-[#d51f32] text-white flex items-center justify-center active:scale-95 transition shadow-xs">
+            <i class="fa-solid fa-plus text-[10px]"></i>
           </button>
         </div>`
     } else {
       kontrolBawah = `
         <button data-action="tambahItem:${item.id}"
-          class="w-full rounded-xl py-2 bg-[#d51f32] text-white font-bold text-xs active:scale-[0.98] transition">
+          class="w-full h-8 rounded-xl bg-[#d51f32] text-white font-bold text-[11px] active:scale-[0.98] transition hover:bg-[#b81828] shadow-xs">
           <span data-text="add">${this.terjemahkan('add')}</span>
         </button>`
     }
 
+    const srcGambar = item.gambar || '/assets/menu-placeholder.svg'
+
     return `
-      <article class="rounded-[28px] bg-white overflow-hidden shadow-[0_10px_24px_rgba(42,36,36,0.14)] flex flex-col ${habis ? 'opacity-60 grayscale' : ''}">
-        <div class="h-28 relative flex items-center justify-center mini-food overflow-hidden rounded-t-[28px]">
-          <img src="/assets/menu-placeholder.svg" alt="" class="absolute inset-0 h-full w-full object-cover opacity-80">
-          <span class="relative text-4xl drop-shadow-lg ${habis ? 'opacity-50' : ''}">${item.emoji}</span>
+      <article class="rounded-2xl bg-white overflow-hidden border border-stone-100 shadow-[0_4px_16px_rgba(42,36,36,0.06)] flex flex-col justify-between transition-all duration-200 hover:shadow-md ${habis ? 'opacity-60 grayscale' : ''}">
+        <div class="h-36 sm:h-40 relative overflow-hidden bg-stone-100 rounded-t-2xl shrink-0">
+          <img src="${srcGambar}" alt="${item.nama}" class="w-full h-full object-cover transition-transform duration-300 hover:scale-105" loading="lazy" />
           ${overlayHabis}
         </div>
-        <div class="p-2.5 flex flex-col flex-1">
-          <p class="font-black text-xs leading-4 ${habis ? 'text-stone-400' : 'text-[#231f20]'}">${item.nama}</p>
-          <p class="text-xs mt-1 font-bold ${habis ? 'text-stone-400' : 'text-[#231f20]'}">${formatRupiah(item.harga)}</p>
-          <div class="mt-auto pt-2.5">
+        <div class="p-2.5 flex flex-col flex-1 justify-between min-h-[85px]">
+          <div>
+            <p class="font-bold text-xs leading-snug text-[#231f20] line-clamp-2">${item.nama}</p>
+            <p class="text-xs mt-1 font-black text-[#d51f32] tabular-nums">${formatRupiah(item.harga)}</p>
+          </div>
+          <div class="mt-2">
             ${kontrolBawah}
           </div>
         </div>
