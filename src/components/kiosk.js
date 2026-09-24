@@ -516,26 +516,31 @@ class KioskApp {
   buatHTMLItemKeranjang(baris, indeks) {
     const detail = this.buatDetailKustomisasi(baris.kustomisasi)
     const barisDetail = detail
-      ? `<p class="text-[10px] text-stone-500 mt-1">${detail}</p>`
+      ? `<p class="text-[10px] leading-tight text-stone-500 mt-1">${detail}</p>`
       : ''
     return `
-      <article class="bg-white rounded-2xl p-4 mb-3 border border-stone-100">
-        <div class="flex gap-3">
-          <div class="mini-food h-12 w-12 rounded-xl flex items-center justify-center text-2xl">🍗</div>
-          <div class="flex-1">
-            <p class="font-black text-sm">${baris.nama}</p>
-            ${barisDetail}
-            <p class="font-black text-[#d51f32] text-sm mt-2">${formatRupiah(baris.harga * baris.jumlah)}</p>
+      <article class="flex items-center gap-3 min-h-[104px] rounded-[30px] bg-white px-3 py-3 shadow-[0_8px_22px_rgba(42,36,36,0.18)]">
+        <div class="mini-food relative h-[72px] w-[78px] shrink-0 overflow-hidden rounded-2xl flex items-center justify-center">
+          <img src="/assets/menu-placeholder.svg" alt="" class="absolute inset-0 h-full w-full object-cover opacity-80">
+          <span class="relative text-3xl drop-shadow">${baris.emoji || '🍗'}</span>
+        </div>
+        <div class="min-w-0 flex-1 self-stretch flex flex-col justify-between py-0.5">
+          <div class="flex items-start justify-between gap-2">
+            <p class="min-w-0 font-semibold text-sm leading-tight text-[#231f20]">${baris.nama}</p>
+            <p class="shrink-0 font-semibold text-sm leading-tight text-[#231f20] tabular-nums">${formatRupiah(baris.harga * baris.jumlah)}</p>
           </div>
-          <div class="flex items-end gap-2">
+          ${barisDetail}
+          <div class="flex items-center justify-end gap-3">
             <button data-action="ubahJumlah:${indeks},-1"
-              class="h-7 w-7 rounded-full bg-stone-100">
-              <i class="fa-solid fa-minus text-[10px]"></i>
+              aria-label="Kurangi ${baris.nama}"
+              class="h-8 w-8 shrink-0 rounded-full border-2 border-[#d51f32] text-[#d51f32] flex items-center justify-center bg-white active:bg-[#d51f32]/10 transition">
+              <i class="fa-solid fa-minus text-xs"></i>
             </button>
-            <span class="font-black text-sm">${baris.jumlah}</span>
+            <span class="min-w-5 text-center font-black text-lg text-[#d51f32] tabular-nums">${baris.jumlah}</span>
             <button data-action="ubahJumlah:${indeks},1"
-              class="h-7 w-7 rounded-full bg-[#d51f32] text-white">
-              <i class="fa-solid fa-plus text-[10px]"></i>
+              aria-label="Tambah ${baris.nama}"
+              class="h-8 w-8 shrink-0 rounded-full border-2 border-[#d51f32] text-[#d51f32] flex items-center justify-center bg-white active:bg-[#d51f32]/10 transition">
+              <i class="fa-solid fa-plus text-xs"></i>
             </button>
           </div>
         </div>

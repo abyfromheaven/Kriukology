@@ -10,7 +10,7 @@
  * 3. Section produk di sebelah kanan (Judul Kategori di atas Grid 2 Kolom)
  * 4. Status pesanan (slide in/out lewat bawah layar) berisi:
  *    - Logo shopcart.webp besar + badge angka + label Pesanan (font besar setara harga) + total harga
- *    - Reset Pesanan (teks merah, bg putih), Lihat Pesanan (bg merah)
+ *    - Reset Pesanan (teks merah, bg putih), Lihat Keranjang (bg merah)
  * 5. Modal konfirmasi reset pesanan
  * ==========================================================================
  */
@@ -19,14 +19,14 @@ const templateLayarMenu = `
 <div data-screen="menu" style="display:none" class="h-full flex flex-col bg-white relative overflow-hidden">
 
   <!-- 1. Header: Belang Kiri | Banner Logo Tengah (Putih) | Belang Kanan -->
-  <header class="shrink-0 h-[80px] flex items-stretch relative">
+  <header class="shrink-0 h-[64px] flex items-stretch relative">
     <!-- Sayap Kiri Belang -->
     <div class="header-belang w-16 sm:w-20 shrink-0"></div>
 
     <!-- Tengah Putih + Banner Logo -->
     <div class="flex-1 bg-white flex items-center justify-center px-3">
       <img src="/assets/kriukology/banner_kriukology.webp" alt="Kriukology"
-        class="h-14 max-w-[88%] object-contain drop-shadow-sm" />
+        class="h-11 max-w-[88%] object-contain drop-shadow-sm" />
     </div>
 
     <!-- Sayap Kanan Belang -->
@@ -37,7 +37,7 @@ const templateLayarMenu = `
   <div class="flex flex-1 min-h-0">
 
     <!-- Sidebar Kategori + Utility Dock -->
-    <aside class="menu-sidebar w-[115px] shrink-0 relative bg-white shadow-[8px_0_22px_rgba(42,36,36,0.10)]">
+    <aside class="menu-sidebar w-[115px] shrink-0 relative bg-white shadow-[8px_0_18px_rgba(42,36,36,0.05)]">
       <nav class="menu-category-list h-full py-3 px-2 space-y-2 overflow-y-auto scroll-clean"
         data-list="kategori"></nav>
 
@@ -94,7 +94,7 @@ const templateLayarMenu = `
 
   <!-- 3. Status Pesanan (Slide-up Bottom Bar) -->
   <div data-bind="statusPesanan"
-    class="status-pesanan absolute left-3 right-3 bottom-3 z-30 rounded-[28px] bg-white shadow-[0_16px_40px_rgba(42,36,36,0.20)] p-2.5">
+    class="status-pesanan absolute left-3 right-3 bottom-3 z-30 rounded-[28px] bg-white shadow-[0_16px_40px_rgba(42,36,36,0.14)] p-2.5">
 
     <!-- Baris atas: Icon Shopcart + Label Pesanan & Total Harga -->
     <div class="flex items-center justify-between gap-2 mb-2">
@@ -116,18 +116,18 @@ const templateLayarMenu = `
       </div>
     </div>
 
-    <!-- Baris bawah: Reset Pesanan (teks merah), Lihat Pesanan (bg merah) -->
+    <!-- Baris bawah: Reset Pesanan (teks merah), Lihat Keranjang (bg merah) -->
     <div class="grid grid-cols-2 gap-2">
       <!-- Tombol Reset Pesanan (Teks Merah, BG Putih) -->
       <button data-action="mintaBatalkan"
-        class="h-9 rounded-xl bg-white shadow-[0_5px_14px_rgba(42,36,36,0.12)] text-[#d51f32] font-bold text-xs active:scale-95 transition">
+        class="h-9 rounded-xl bg-white shadow-[0_4px_12px_rgba(42,36,36,0.08)] text-[#d51f32] font-bold text-xs active:scale-95 transition">
         <span data-text="cancelOrder">Reset Pesanan</span>
       </button>
 
-      <!-- Tombol Lihat Pesanan (BG Merah, Teks Putih) -->
+      <!-- Tombol Lihat Keranjang (BG Merah, Teks Putih) -->
       <button data-action="navigasiKe:keranjang"
         class="h-9 rounded-xl bg-[#d51f32] text-white font-black text-xs active:scale-95 transition">
-        <span data-text="viewOrder">Lihat Pesanan</span>
+        <span data-text="viewOrder">Lihat Keranjang</span>
       </button>
     </div>
 

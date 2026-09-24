@@ -2,39 +2,41 @@
  * ==========================================================================
  * TEMPLATE: LAYAR KERANJANG
  * ==========================================================================
- * Layar review pesanan sebelum masuk ke pengiriman.
+ * Ringkasan pesanan dengan daftar produk dan total yang selalu diperbarui.
  * ==========================================================================
  */
 
 const templateKeranjang = `
-<div data-screen="keranjang" style="display:none" class="h-full flex flex-col bg-[#f7f1e8]">
+<div data-screen="keranjang" style="display:none" class="h-full flex flex-col bg-white relative overflow-hidden">
 
-  <!-- Header -->
-  <header class="p-6 pb-4">
-    <button data-action="navigasiKe:menu" class="text-sm font-bold text-stone-500">
-      <i class="fa-solid fa-arrow-left mr-2"></i>
-      <span data-text="back"></span>
-    </button>
-    <p class="text-xs font-bold tracking-[.18em] text-[#d51f32] mt-5">03 — REVIEW PESANAN</p>
-    <h2 class="display text-4xl mt-1" data-text="cart"></h2>
+  <header class="shrink-0">
+    <div class="h-[64px] flex items-stretch relative">
+      <div class="header-belang w-16 sm:w-20 shrink-0"></div>
+      <div class="flex-1 bg-white flex items-center justify-center px-3">
+        <img src="/assets/kriukology/banner_kriukology.webp" alt="Kriukology"
+          class="h-11 max-w-[88%] object-contain drop-shadow-sm" />
+      </div>
+      <div class="header-belang w-16 sm:w-20 shrink-0"></div>
+    </div>
+    <h1 class="display text-xl sm:text-2xl text-center text-[#231f20] py-2" data-text="cartTitle">KERANJANG</h1>
   </header>
 
-  <!-- Daftar item di keranjang -->
-  <div class="flex-1 overflow-y-auto px-5" data-list="keranjangItems"></div>
+  <main class="flex-1 min-h-0 overflow-y-auto scroll-clean px-4 sm:px-5 pt-1 pb-5">
+    <div class="space-y-3 pb-3" data-list="keranjangItems"></div>
+  </main>
 
-  <!-- Footer: Total harga + tombol aksi -->
-  <footer class="p-5 bg-white border-t border-stone-200">
-    <div class="flex justify-between mb-4">
-      <span class="font-bold text-stone-500">TOTAL</span>
-      <span class="text-xl font-black text-[#d51f32]" data-bind="totalHargaKeranjang"></span>
+  <footer class="shrink-0 z-20 bg-white rounded-t-[26px] shadow-[0_-12px_32px_rgba(42,36,36,0.18)] px-4 sm:px-5 pt-4 pb-4">
+    <div class="flex items-center justify-between gap-3 mb-3">
+      <span class="font-black text-base sm:text-lg text-[#231f20]" data-text="cartTotal">TOTAL</span>
+      <span class="font-black text-base sm:text-lg text-[#231f20] tabular-nums" data-bind="totalHargaKeranjang">Rp0</span>
     </div>
     <div class="grid grid-cols-2 gap-3">
       <button data-action="navigasiKe:menu"
-        class="rounded-xl py-4 bg-stone-100 font-bold text-sm"
-        data-text="more"></button>
+        class="min-h-11 rounded-xl border border-[#d51f32] bg-white text-[#d51f32] font-bold text-xs sm:text-sm active:scale-[0.98] transition"
+        data-text="cartMore">Tambahkan Menu Lain</button>
       <button data-action="navigasiKe:pengiriman"
-        class="rounded-xl py-4 bg-[#d51f32] text-white font-black text-sm"
-        data-text="finish"></button>
+        class="min-h-11 rounded-xl bg-[#d51f32] text-white font-black text-xs sm:text-sm active:scale-[0.98] transition"
+        data-text="cartCheckout">Lanjut Bayar</button>
     </div>
   </footer>
 
