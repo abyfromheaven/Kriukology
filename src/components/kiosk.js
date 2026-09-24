@@ -511,43 +511,19 @@ class KioskApp {
   buatHTMLMetodePembayaran(metode) {
     const aktif = this.metodePembayaran === metode.id
     const kelasAktif = aktif
-      ? 'bg-red-50/90 border-[#d51f32] text-[#d51f32] shadow-md ring-2 ring-[#d51f32]/25 scale-[1.03]'
-      : 'bg-stone-50/40 hover:bg-stone-50 border-stone-100 text-[#231f20] hover:shadow-sm'
+      ? 'bg-red-50/70 text-[#d51f32] shadow-[0_10px_24px_rgba(213,31,50,0.16)] ring-2 ring-[#d51f32]/30 scale-[1.03]'
+      : 'bg-white text-[#231f20] hover:bg-stone-50 shadow-[0_6px_18px_rgba(42,36,36,0.07)] hover:shadow-[0_10px_24px_rgba(42,36,36,0.10)]'
 
-    let visualIcon = ''
-    if (metode.id === 'qris') {
-      visualIcon = `<div class="h-16 flex items-center justify-center">
-        <div class="px-2.5 py-1 bg-[#231f20] text-white font-black text-sm tracking-tighter rounded-md flex items-center gap-1 border border-stone-700 shadow-xs">
-          <i class="fa-solid fa-qrcode text-base text-[#d51f32]"></i>
-          <span>QRIS</span>
-        </div>
-      </div>`
-    } else if (metode.id === 'cash') {
-      visualIcon = `<div class="h-16 flex items-center justify-center relative">
-        <div class="w-12 h-8 rounded-md bg-emerald-100 border border-emerald-500 flex items-center justify-center shadow-xs">
-          <span class="text-[10px] font-black text-emerald-800">Rp</span>
-        </div>
-        <div class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-400 border border-amber-500 flex items-center justify-center shadow-xs">
-          <span class="text-[9px] font-bold text-amber-950">$</span>
-        </div>
-      </div>`
-    } else if (metode.id === 'debit') {
-      visualIcon = `<div class="h-16 flex items-center justify-center relative">
-        <div class="w-12 h-8 rounded-lg bg-amber-400 border border-amber-500 transform -rotate-12 absolute shadow-xs"></div>
-        <div class="w-12 h-8 rounded-lg bg-sky-500 border border-sky-600 flex flex-col justify-between p-1 shadow-md relative z-10">
-          <div class="w-2.5 h-2 bg-amber-300 rounded-xs"></div>
-          <div class="flex justify-between items-center text-[7px] text-white">
-            <span>••••</span>
-          </div>
-        </div>
-      </div>`
-    }
+    const gambar = `/assets/${metode.id}.png`
 
     return `
       <button data-action="setMetodePembayaran:${metode.id}"
-        class="rounded-xl p-3 flex flex-col items-center justify-between text-center transition-all duration-200 border cursor-pointer ${kelasAktif}">
-        ${visualIcon}
-        <span class="text-xs sm:text-sm font-extrabold tracking-wide mt-2">${metode.label}</span>
+        class="rounded-2xl px-2 py-4 sm:py-5 flex flex-col items-center gap-3 text-center transition-all duration-200 cursor-pointer ${kelasAktif}">
+        <span class="h-24 sm:h-28 w-full flex items-center justify-center">
+          <img src="${gambar}" alt="${metode.label}" loading="lazy"
+            class="max-h-full max-w-full object-contain drop-shadow-sm" />
+        </span>
+        <span class="text-base sm:text-lg font-extrabold tracking-wide">${metode.label}</span>
       </button>`
   }
 
@@ -690,12 +666,6 @@ class KioskApp {
       wadahMetode.innerHTML = daftarMetodePembayaran
         .map(metode => this.buatHTMLMetodePembayaran(metode))
         .join('')
-    }
-
-    // Perbarui status tombol simulasi selesaikan pembayaran
-    const tombolSimulasi = el.querySelector('[data-bind="simulateBtn"]')
-    if (tombolSimulasi) {
-      tombolSimulasi.disabled = !this.metodePembayaran
     }
   }
 
