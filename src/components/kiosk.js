@@ -454,7 +454,7 @@ class KioskApp {
     const habis = Boolean(item.habis)
 
     const overlayHabis = habis
-      ? `<div class="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center rounded-t-2xl z-10">
+      ? `<div class="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center rounded-t-[28px] z-10">
            <span class="text-white font-black text-xs tracking-wider uppercase px-2 py-1 bg-black/40 rounded" data-text="stockOut">${this.terjemahkan('stockOut')}</span>
          </div>`
       : ''
@@ -488,8 +488,8 @@ class KioskApp {
     }
 
     return `
-      <article class="rounded-2xl bg-white overflow-hidden border border-stone-200 flex flex-col ${habis ? 'opacity-60 grayscale' : ''}">
-        <div class="h-28 relative flex items-center justify-center mini-food overflow-hidden rounded-t-2xl">
+      <article class="rounded-[28px] bg-white overflow-hidden shadow-[0_10px_24px_rgba(42,36,36,0.14)] flex flex-col ${habis ? 'opacity-60 grayscale' : ''}">
+        <div class="h-28 relative flex items-center justify-center mini-food overflow-hidden rounded-t-[28px]">
           <img src="/assets/menu-placeholder.svg" alt="" class="absolute inset-0 h-full w-full object-cover opacity-80">
           <span class="relative text-4xl drop-shadow-lg ${habis ? 'opacity-50' : ''}">${item.emoji}</span>
           ${overlayHabis}
@@ -667,8 +667,10 @@ class KioskApp {
 
     // Status pesanan: slide in/out + count + total
     const statusEl = el.querySelector('[data-bind="statusPesanan"]')
+    const jumlah = this.dapatkanJumlahItem()
+    el.classList.toggle('punya-pesanan', jumlah > 0)
+
     if (statusEl) {
-      const jumlah = this.dapatkanJumlahItem()
       statusEl.classList.toggle('status-aktif', jumlah > 0)
 
       const countEl = statusEl.querySelector('[data-bind="countBucket"]')
@@ -677,6 +679,12 @@ class KioskApp {
       const totalEl = statusEl.querySelector('[data-bind="totalHargaMenu"]')
       if (totalEl) totalEl.textContent = formatRupiah(this.dapatkanTotalHarga())
     }
+
+    // Perbarui status aktif tombol bahasa di utility dock sidebar
+    el.querySelectorAll('[data-aktif-bahasa]').forEach(tombol => {
+      const aktif = tombol.dataset.aktifBahasa === this.bahasa
+      tombol.classList.toggle('flag-aktif', aktif)
+    })
 
     // Modal konfirmasi batalkan
     const konfirmasiEl = el.querySelector('[data-bind="konfirmasiBatal"]')

@@ -180,6 +180,47 @@ button:focus-visible { outline: 3px solid #f5bd27; outline-offset: 3px; }
   );
 }
 
+/* ── Layar Menu: Sidebar Utility Dock ───────────────────────────────── */
+.menu-category-list {
+  padding-bottom: 88px;
+  transition: padding-bottom 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.menu-utility-dock {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 12px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: translateY(0);
+  transition: bottom 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+[data-screen="menu"].punya-pesanan .menu-category-list {
+  padding-bottom: 244px;
+}
+
+[data-screen="menu"].punya-pesanan .menu-utility-dock {
+  bottom: 168px;
+}
+
+[data-screen="menu"] .menu-flag-btn .menu-flag {
+  transform: scale(0.84);
+  box-shadow: 0 3px 9px rgba(42, 36, 36, 0.12);
+}
+
+[data-screen="menu"] .menu-flag-btn.flag-aktif .menu-flag {
+  transform: scale(1.04);
+  box-shadow: 0 0 0 2px rgba(213, 31, 50, 0.16),
+              0 4px 10px rgba(213, 31, 50, 0.2);
+}
+
 /* ── Layar Menu (rebuild): Status Pesanan Slide In/Out ──────────────── */
 .status-pesanan {
   transform: translateY(calc(100% + 24px));
