@@ -57,17 +57,17 @@ const templateLayarMenu = `
 
   <!-- 3. Status Pesanan (Slide-up Bottom Bar) -->
   <div data-bind="statusPesanan"
-    class="status-pesanan absolute left-3 right-3 bottom-3 z-30 rounded-2xl bg-white border border-stone-200 shadow-[0_14px_44px_rgba(0,0,0,0.18)] p-3">
+    class="status-pesanan absolute left-3 right-3 bottom-3 z-30 rounded-2xl bg-white border border-stone-200 shadow-[0_14px_44px_rgba(0,0,0,0.18)] p-2.5">
 
     <!-- Baris atas: Icon Shopcart + Label Pesanan & Total Harga -->
-    <div class="flex items-center justify-between gap-2 mb-3">
-      <div class="flex items-center gap-2.5">
+    <div class="flex items-center justify-between gap-2 mb-2">
+      <div class="flex items-center gap-2">
         <!-- Icon Shopcart: pas di dalam bar, sedikit overflow masih dalam padding -->
-        <div class="relative h-20 w-20 shrink-0 flex items-center justify-center">
+        <div class="relative h-[76px] w-[76px] shrink-0 flex items-center justify-center">
           <img src="/assets/shopcart.webp" alt="Pesanan"
             class="h-24 w-24 object-contain drop-shadow" />
           <span data-bind="countBucket"
-            class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-base font-black text-[#231f20] pointer-events-none">0</span>
+            class="absolute left-[51%] top-[57%] -translate-x-1/2 -translate-y-1/2 text-base font-black text-[#231f20] pointer-events-none">0</span>
         </div>
         <!-- Teks Pesanan dengan Ukuran Font Sama dengan Harga (text-base / text-lg) -->
         <span class="font-black text-base sm:text-lg text-[#231f20]" data-text="orderLabel">Pesanan</span>
@@ -83,19 +83,19 @@ const templateLayarMenu = `
     <div class="grid grid-cols-12 gap-2">
       <!-- Tombol Back (Hanya Icon) -->
       <button data-action="kembaliPreferensi" aria-label="Kembali"
-        class="col-span-2 h-10 rounded-xl bg-white border border-stone-200 text-stone-700 flex items-center justify-center active:scale-95 transition">
+        class="col-span-2 h-9 rounded-xl bg-white border border-stone-200 text-stone-700 flex items-center justify-center active:scale-95 transition">
         <i class="fa-solid fa-arrow-left text-sm"></i>
       </button>
 
       <!-- Tombol Reset Pesanan (Teks Merah, BG Putih) -->
       <button data-action="mintaBatalkan"
-        class="col-span-5 h-10 rounded-xl bg-white border border-stone-200 text-[#d51f32] font-bold text-xs active:scale-95 transition">
+        class="col-span-5 h-9 rounded-xl bg-white border border-stone-200 text-[#d51f32] font-bold text-xs active:scale-95 transition">
         <span data-text="cancelOrder">Reset Pesanan</span>
       </button>
 
       <!-- Tombol Lihat Pesanan (BG Merah, Teks Putih) -->
       <button data-action="navigasiKe:keranjang"
-        class="col-span-5 h-10 rounded-xl bg-[#d51f32] text-white font-black text-xs active:scale-95 transition">
+        class="col-span-5 h-9 rounded-xl bg-[#d51f32] text-white font-black text-xs active:scale-95 transition">
         <span data-text="viewOrder">Lihat Pesanan</span>
       </button>
     </div>
