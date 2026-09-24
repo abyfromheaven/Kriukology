@@ -55,6 +55,7 @@ const daftarMenu = [
     emoji: '🍗',
     tag: 'RAMAI-RAMAI',
     deskripsi: '4 ayam, nasi, 2 minum',
+    habis: true,
   },
 
   // ── Kategori A La Carte (Satuan) ──────────────────────────────────────
@@ -115,6 +116,7 @@ const daftarMenu = [
     emoji: '✨',
     tag: 'BARU',
     deskripsi: 'Tipis, kriuk, nagih',
+    habis: true,
   },
 ]
 

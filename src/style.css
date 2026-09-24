@@ -171,6 +171,28 @@ button:focus-visible { outline: 3px solid #f5bd27; outline-offset: 3px; }
   to   { opacity: 1; transform: scale(1); }
 }
 
+/* ── Layar Menu (rebuild): Header Belang Merah/Putih ────────────────── */
+.header-belang {
+  background-image: repeating-linear-gradient(
+    90deg,
+    #d51f32 0 26px,
+    #ffffff 26px 52px
+  );
+}
+
+/* ── Layar Menu (rebuild): Status Pesanan Slide In/Out ──────────────── */
+.status-pesanan {
+  transform: translateY(calc(100% + 24px));
+  transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+  pointer-events: none;
+}
+
+.status-pesanan.status-aktif {
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
 [data-screen="preferensi"] .pref-logo-wrapper {
   animation: pref-scale-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
 }

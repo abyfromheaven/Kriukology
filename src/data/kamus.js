@@ -59,6 +59,13 @@ const kamus = {
     scan: 'Scan QR untuk bayar',
     cash: 'Bayar di kasir',
     served: 'Akan diantar ke meja',
+    orderLabel: 'Pesanan',
+    cancelOrder: 'Reset Pesanan',
+    viewOrder: 'Lihat Pesanan',
+    stockOut: 'Stok Habis',
+    cancelConfirm: 'Reset seluruh pesanan ini?',
+    yes: 'Ya',
+    no: 'Batal',
   },
 
   // ── Bahasa Inggris ────────────────────────────────────────────────────
@@ -104,6 +111,13 @@ const kamus = {
     scan: 'Scan QR to pay',
     cash: 'Pay at counter',
     served: 'Will be delivered to your table',
+    orderLabel: 'Order',
+    cancelOrder: 'Reset Order',
+    viewOrder: 'View Order',
+    stockOut: 'Out of Stock',
+    cancelConfirm: 'Reset this entire order?',
+    yes: 'Yes',
+    no: 'Cancel',
   },
 }
 

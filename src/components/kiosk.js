@@ -32,10 +32,7 @@ class KioskApp {
     this.tipePesanan = ''
     this.kategoriAktif = 'rekomendasi'
     this.keranjang = []
-    this.itemSaatIni = null
-    this.tampilModal = false
-    this.tampilToast = false
-    this.kustomisasi = { potongan: '', minuman: '', saus: '' }
+    this.tampilKonfirmasiBatal = false
     this.metodePengiriman = ''
     this.nomorMeja = ''
     this.metodePembayaran = ''
@@ -143,37 +140,6 @@ class KioskApp {
     }
   }
 
-  /** Membuka modal kustomisasi untuk item tertentu */
-  bukaMenu(item) {
-    this.itemSaatIni = item
-    this.kustomisasi = { potongan: '', minuman: '', saus: '' }
-    this.tampilModal = true
-    mainkanSuara()
-    this.render()
-  }
-
-  /** Menambahkan item yang sudah dikustomisasi ke keranjang */
-  tambahKeKeranjang() {
-    if (!this.kustomisasi.potongan || !this.kustomisasi.minuman || !this.kustomisasi.saus) return
-
-    this.keranjang.push({
-      ...this.itemSaatIni,
-      kustomisasi: { ...this.kustomisasi },
-      jumlah: 1,
-      kunci: Date.now(),
-    })
-
-    this.tampilModal = false
-    this.tampilToast = true
-    mainkanSuara()
-    this.render()
-
-    setTimeout(() => {
-      this.tampilToast = false
-      this.render()
-    }, 1800)
-  }
-
   /** Menambah atau mengurangi jumlah item di keranjang */
   ubahJumlah(indeks, jumlah) {
     const jumlahBaru = this.keranjang[indeks].jumlah + jumlah
@@ -184,10 +150,74 @@ class KioskApp {
     }
     mainkanSuara()
     if (!this.keranjang.length) {
+      this.tampilKonfirmasiBatal = false
       this.navigasiKe('menu')
     } else {
       this.render()
     }
+  }
+
+  /** Mendapatkan jumlah item tertentu di keranjang (by id produk) */
+  dapatkanQtyItem(id) {
+    const baris = this.keranjang.find(baris => baris.id === id)
+    return baris ? baris.jumlah : 0
+  }
+
+  /** Menambahkan item langsung ke keranjang (tanpa modal kustomisasi) */
+  tambahItemLangsung(id) {
+    const item = daftarMenu.find(m => m.id === id)
+    if (!item || item.habis) return
+
+    const baris = this.keranjang.find(baris => baris.id === id)
+    if (baris) {
+      baris.jumlah += 1
+    } else {
+      this.keranjang.push({
+        ...item,
+        kustomisasi: { potongan: '', minuman: '', saus: '' },
+        jumlah: 1,
+        kunci: Date.now(),
+      })
+    }
+
+    mainkanSuara()
+    this.render()
+  }
+
+  /** Mengurangi jumlah item; jika 0, hapus dari keranjang */
+  kurangiItemLangsung(id) {
+    const indeks = this.keranjang.findIndex(baris => baris.id === id)
+    if (indeks === -1) return
+
+    this.keranjang[indeks].jumlah -= 1
+    if (this.keranjang[indeks].jumlah <= 0) {
+      this.keranjang.splice(indeks, 1)
+    }
+
+    mainkanSuara()
+    this.render()
+  }
+
+  /** Membuka konfirmasi pembatalan pesanan */
+  mintaBatalkanPesanan() {
+    if (!this.keranjang.length) return
+    this.tampilKonfirmasiBatal = true
+    mainkanSuara()
+    this.render()
+  }
+
+  /** Membatalkan seluruh pesanan setelah konfirmasi */
+  batalkanPesanan() {
+    this.keranjang = []
+    this.tampilKonfirmasiBatal = false
+    mainkanSuara()
+    this.render()
+  }
+
+  /** Menutup konfirmasi pembatalan */
+  tutupKonfirmasiBatalkan() {
+    this.tampilKonfirmasiBatal = false
+    this.render()
   }
 
   /** Menangani input nomor meja dari keypad virtual */
@@ -239,12 +269,10 @@ class KioskApp {
     this.langkah = 'screensaver'
     this.keranjang = []
     this.kategoriAktif = 'rekomendasi'
-    this.itemSaatIni = null
-    this.tampilModal = false
+    this.tampilKonfirmasiBatal = false
     this.metodePengiriman = ''
     this.nomorMeja = ''
     this.metodePembayaran = ''
-    this.kustomisasi = { potongan: '', minuman: '', saus: '' }
     this.render()
   }
 
@@ -305,28 +333,31 @@ class KioskApp {
         this.render()
         break
 
-      case 'bukaMenu': {
-        const id = Number(argumen)
-        const item = daftarMenu.find(m => m.id === id)
-        if (item) this.bukaMenu(item)
+      case 'tambahItem': {
+        this.tambahItemLangsung(Number(argumen))
         break
       }
 
-      case 'setKustomisasi': {
-        const [jenis, nilai] = argumen.split('=')
-        this.kustomisasi[jenis] = nilai
-        mainkanSuara()
-        this.render()
+      case 'kurangiItem': {
+        this.kurangiItemLangsung(Number(argumen))
         break
       }
 
-      case 'tambahKeKeranjang':
-        this.tambahKeKeranjang()
+      case 'mintaBatalkan':
+        this.mintaBatalkanPesanan()
         break
 
-      case 'tutupModal':
-        this.tampilModal = false
-        this.render()
+      case 'konfirmasiBatalkan':
+        this.batalkanPesanan()
+        break
+
+      case 'batalKonfirmasi':
+        this.tutupKonfirmasiBatalkan()
+        break
+
+      case 'kembaliPreferensi':
+        this.tampilKonfirmasiBatal = false
+        this.navigasiKe('preferensi')
         break
 
       case 'ubahJumlah': {
@@ -399,61 +430,101 @@ class KioskApp {
     this.renderPembayaran()
     this.renderStruk()
     this.renderSukses()
-    this.renderModal()
-    this.renderToast()
   }
 
   // ── HELPER: PEMBUATAN HTML ──────────────────────────────────────────
 
-  /** Membuat HTML tombol kategori */
+  /** Membuat HTML tombol kategori — clean borderless, teks merah saat aktif */
   buatHTMLKategori(kategori) {
     const aktif = this.kategoriAktif === kategori.id
-    const kelasAktif = aktif ? 'bg-[#d51f32] text-white shadow-md' : 'text-stone-500'
+    const kelasTeks = aktif
+      ? 'text-[#d51f32] font-black'
+      : 'text-[#231f20] font-semibold opacity-85 hover:opacity-100'
     return `
       <button data-action="setKategori:${kategori.id}"
-        class="w-full rounded-xl px-2 py-3 text-[10px] font-bold leading-3 transition ${kelasAktif}">
-        <i class="${kategori.icon} block text-base mb-1"></i>
-        <span>${kategori.label[this.bahasa]}</span>
+        class="w-full px-2 py-2 flex items-center gap-2.5 text-left transition rounded-lg hover:bg-stone-50">
+        <i class="${kategori.icon} text-[#d51f32] text-base shrink-0 w-5 text-center"></i>
+        <span class="text-[11px] leading-tight ${kelasTeks}">${kategori.label[this.bahasa]}</span>
       </button>`
   }
 
-  /** Membuat HTML kartu item menu */
+  /** Membuat HTML kartu item menu — 3 state: default (Tambah), dipilih (+/-), stok habis */
   buatHTMLItemMenu(item) {
-    const tagHTML = item.tag
-      ? `<span class="absolute top-2 left-2 bg-[#f5bd27] px-2 py-1 rounded-full text-[8px] font-black text-[#4c2a14]">${item.tag}</span>`
+    const qty = this.dapatkanQtyItem(item.id)
+    const habis = Boolean(item.habis)
+
+    const overlayHabis = habis
+      ? `<div class="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center rounded-t-2xl z-10">
+           <span class="text-white font-black text-xs tracking-wider uppercase px-2 py-1 bg-black/40 rounded" data-text="stockOut">${this.terjemahkan('stockOut')}</span>
+         </div>`
       : ''
 
+    let kontrolBawah = ''
+    if (habis) {
+      kontrolBawah = `
+        <button disabled
+          class="w-full rounded-xl py-2 bg-stone-100 text-stone-400 font-bold text-xs border border-stone-200 cursor-not-allowed">
+          <span data-text="add">${this.terjemahkan('add')}</span>
+        </button>`
+    } else if (qty > 0) {
+      kontrolBawah = `
+        <div class="flex items-center justify-around py-0.5">
+          <button data-action="kurangiItem:${item.id}" aria-label="kurangi"
+            class="h-8 w-8 shrink-0 rounded-full border-2 border-[#d51f32] text-[#d51f32] flex items-center justify-center bg-white active:bg-[#d51f32]/10 transition">
+            <i class="fa-solid fa-minus text-xs"></i>
+          </button>
+          <span class="font-black text-lg text-[#d51f32]">${qty}</span>
+          <button data-action="tambahItem:${item.id}" aria-label="tambah"
+            class="h-8 w-8 shrink-0 rounded-full border-2 border-[#d51f32] text-[#d51f32] flex items-center justify-center bg-white active:bg-[#d51f32]/10 transition">
+            <i class="fa-solid fa-plus text-xs"></i>
+          </button>
+        </div>`
+    } else {
+      kontrolBawah = `
+        <button data-action="tambahItem:${item.id}"
+          class="w-full rounded-xl py-2 bg-[#d51f32] text-white font-bold text-xs active:scale-[0.98] transition">
+          <span data-text="add">${this.terjemahkan('add')}</span>
+        </button>`
+    }
+
     return `
-      <button data-action="bukaMenu:${item.id}"
-        class="text-left rounded-2xl bg-white overflow-hidden border border-stone-100 shadow-sm hover:-translate-y-0.5 transition">
-        <div class="h-28 relative flex items-center justify-center mini-food overflow-hidden">
+      <article class="rounded-2xl bg-white overflow-hidden border border-stone-200 flex flex-col ${habis ? 'opacity-60 grayscale' : ''}">
+        <div class="h-28 relative flex items-center justify-center mini-food overflow-hidden rounded-t-2xl">
           <img src="/assets/menu-placeholder.svg" alt="" class="absolute inset-0 h-full w-full object-cover opacity-80">
-          ${tagHTML}
-          <span class="relative text-4xl drop-shadow-lg">${item.emoji}</span>
+          <span class="relative text-4xl drop-shadow-lg ${habis ? 'opacity-50' : ''}">${item.emoji}</span>
+          ${overlayHabis}
         </div>
-        <div class="p-3">
-          <p class="font-black text-xs leading-4">${item.nama}</p>
-          <p class="text-[10px] text-stone-500 mt-1 truncate">${item.deskripsi}</p>
-          <div class="mt-3 flex justify-between items-center">
-            <span class="text-xs font-black text-[#d51f32]">${formatRupiah(item.harga)}</span>
-            <span class="h-6 w-6 bg-[#d51f32] text-white rounded-full inline-flex items-center justify-center">
-              <i class="fa-solid fa-plus text-[10px]"></i>
-            </span>
+        <div class="p-2.5 flex flex-col flex-1">
+          <p class="font-black text-xs leading-4 ${habis ? 'text-stone-400' : 'text-[#231f20]'}">${item.nama}</p>
+          <p class="text-xs mt-1 font-bold ${habis ? 'text-stone-400' : 'text-[#231f20]'}">${formatRupiah(item.harga)}</p>
+          <div class="mt-auto pt-2.5">
+            ${kontrolBawah}
           </div>
         </div>
-      </button>`
+      </article>`
+  }
+
+  /** Membuat HTML detail kustomisasi (kosong jika tanpa modal) */
+  buatDetailKustomisasi(kustomisasi) {
+    if (!kustomisasi) return ''
+    const bagian = [kustomisasi.potongan, kustomisasi.minuman, kustomisasi.saus]
+      .filter(Boolean)
+    return bagian.length ? bagian.join(' · ') : ''
   }
 
   /** Membuat HTML item di keranjang */
   buatHTMLItemKeranjang(baris, indeks) {
-    const detailKustomisasi = `${baris.kustomisasi.potongan} · ${baris.kustomisasi.minuman} · ${baris.kustomisasi.saus}`
+    const detail = this.buatDetailKustomisasi(baris.kustomisasi)
+    const barisDetail = detail
+      ? `<p class="text-[10px] text-stone-500 mt-1">${detail}</p>`
+      : ''
     return `
       <article class="bg-white rounded-2xl p-4 mb-3 border border-stone-100">
         <div class="flex gap-3">
           <div class="mini-food h-12 w-12 rounded-xl flex items-center justify-center text-2xl">🍗</div>
           <div class="flex-1">
             <p class="font-black text-sm">${baris.nama}</p>
-            <p class="text-[10px] text-stone-500 mt-1">${detailKustomisasi}</p>
+            ${barisDetail}
             <p class="font-black text-[#d51f32] text-sm mt-2">${formatRupiah(baris.harga * baris.jumlah)}</p>
           </div>
           <div class="flex items-end gap-2">
@@ -520,14 +591,17 @@ class KioskApp {
 
   /** Membuat HTML item di struk digital */
   buatHTMLItemStruk(baris) {
-    const detailKustomisasi = `${baris.kustomisasi.potongan} · ${baris.kustomisasi.minuman} · ${baris.kustomisasi.saus}`
+    const detail = this.buatDetailKustomisasi(baris.kustomisasi)
+    const barisDetail = detail
+      ? `<p class="text-[10px] text-stone-500 mt-1">${detail}</p>`
+      : ''
     return `
       <div class="mb-3">
         <div class="flex justify-between font-bold">
           <span>${baris.nama} × ${baris.jumlah}</span>
           <span>${formatRupiah(baris.harga * baris.jumlah)}</span>
         </div>
-        <p class="text-[10px] text-stone-500 mt-1">${detailKustomisasi}</p>
+        ${barisDetail}
       </div>`
   }
 
@@ -563,44 +637,51 @@ class KioskApp {
     })
   }
 
-  /** Render layar menu */
+  /** Render layar menu — rebuild total sesuai sketsa */
   renderMenu() {
     const el = document.querySelector('[data-screen="menu"]')
     if (!el) return
     const t = (kunci) => this.terjemahkan(kunci)
 
-    // Perbarui tipe pesanan di header
-    const headerTipe = el.querySelector('[data-bind="tipePesanan"]')
-    if (headerTipe) {
-      headerTipe.textContent = this.tipePesanan === 'dine' ? t('dine') : t('take')
+    // Judul kategori aktif
+    const judulKategori = el.querySelector('[data-bind="judulKategori"]')
+    if (judulKategori) {
+      const kategori = daftarKategori.find(kat => kat.id === this.kategoriAktif)
+      judulKategori.textContent = kategori
+        ? kategori.label[this.bahasa]
+        : t('menu')
     }
 
-    // Render daftar kategori
+    // Sidebar kategori
     const wadahKategori = el.querySelector('[data-list="kategori"]')
     if (wadahKategori) {
       wadahKategori.innerHTML = daftarKategori.map(kat => this.buatHTMLKategori(kat)).join('')
     }
 
-    // Render grid menu
+    // Grid card produk (2 kolom)
     const wadahMenu = el.querySelector('[data-list="menuTampil"]')
     if (wadahMenu) {
       const itemMenu = this.dapatkanMenuTampil()
       wadahMenu.innerHTML = itemMenu.map(item => this.buatHTMLItemMenu(item)).join('')
     }
 
-    // Perbarui tombol keranjang mini
-    const tombolKeranjang = el.querySelector('[data-bind="keranjangMini"]')
-    if (tombolKeranjang) {
-      const adaItem = this.keranjang.length > 0
-      tombolKeranjang.classList.toggle('bg-[#231f20]', adaItem)
-      tombolKeranjang.classList.toggle('text-white', adaItem)
-      tombolKeranjang.classList.toggle('bg-stone-200', !adaItem)
-      tombolKeranjang.classList.toggle('text-stone-400', !adaItem)
-      tombolKeranjang.querySelector('[data-bind="jumlahItemMenu"]').textContent =
-        this.dapatkanJumlahItem() + ' ' + t('items')
-      tombolKeranjang.querySelector('[data-bind="totalHargaMenu"]').textContent =
-        formatRupiah(this.dapatkanTotalHarga())
-      tombolKeranjang.querySelector('[data-bind="viewCartText"]').textContent = t('viewCart')
+    // Status pesanan: slide in/out + count + total
+    const statusEl = el.querySelector('[data-bind="statusPesanan"]')
+    if (statusEl) {
+      const jumlah = this.dapatkanJumlahItem()
+      statusEl.classList.toggle('status-aktif', jumlah > 0)
+
+      const countEl = statusEl.querySelector('[data-bind="countBucket"]')
+      if (countEl) countEl.textContent = String(jumlah)
+
+      const totalEl = statusEl.querySelector('[data-bind="totalHargaMenu"]')
+      if (totalEl) totalEl.textContent = formatRupiah(this.dapatkanTotalHarga())
+    }
+
+    // Modal konfirmasi batalkan
+    const konfirmasiEl = el.querySelector('[data-bind="konfirmasiBatal"]')
+    if (konfirmasiEl) {
+      konfirmasiEl.style.display = this.tampilKonfirmasiBatal ? '' : 'none'
     }
   }
 
@@ -748,46 +829,6 @@ class KioskApp {
   perbaruiDetikStruk() {
     const el = document.querySelector('[data-bind="detikStruk"]')
     if (el) el.textContent = this.detikStruk
-  }
-
-  /** Render modal kustomisasi item */
-  renderModal() {
-    const overlay = document.querySelector('[data-bind="modalOverlay"]')
-    if (!overlay) return
-    overlay.style.display = this.tampilModal ? '' : 'none'
-
-    if (this.tampilModal && this.itemSaatIni) {
-      // Perbarui nama item
-      const namaEl = overlay.querySelector('[data-bind="modalNama"]')
-      if (namaEl) namaEl.textContent = this.itemSaatIni.nama
-
-      // Perbarui status aktif tombol kustomisasi
-      overlay.querySelectorAll('[data-kustomisasi]').forEach(tombol => {
-        const [jenis, nilai] = tombol.dataset.kustomisasi.split('=')
-        const aktif = this.kustomisasi[jenis] === nilai
-        tombol.classList.toggle('bg-[#d51f32]', aktif)
-        tombol.classList.toggle('text-white', aktif)
-        tombol.classList.toggle('bg-white', !aktif)
-        tombol.classList.toggle('border', !aktif)
-        tombol.classList.toggle('border-stone-200', !aktif)
-      })
-
-      // Perbarui status tombol tambah ke keranjang
-      const tombolTambah = overlay.querySelector('[data-bind="addCartBtn"]')
-      if (tombolTambah) {
-        const semuaDipilih = this.kustomisasi.potongan && this.kustomisasi.minuman && this.kustomisasi.saus
-        tombolTambah.disabled = !semuaDipilih
-      }
-    }
-  }
-
-  /** Render toast notifikasi */
-  renderToast() {
-    const toast = document.querySelector('[data-bind="toast"]')
-    if (!toast) return
-    toast.style.display = this.tampilToast ? '' : 'none'
-    const teksToast = toast.querySelector('[data-bind="toastText"]')
-    if (teksToast) teksToast.textContent = this.terjemahkan('added')
   }
 }
 
