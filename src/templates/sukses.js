@@ -12,7 +12,7 @@ const templateSukses = `
     <div class="h-20 w-20 mx-auto rounded-full border-4 border-[#f5bd27] flex items-center justify-center text-4xl">
       <i class="fa-solid fa-check"></i>
     </div>
-    <h2 class="display text-5xl mt-7" data-bind="thankText"></h2>
+    <h2 class="display font-black text-5xl mt-7" data-bind="thankText"></h2>
     <p class="mt-3 font-medium text-white/80" data-bind="processingText"></p>
   </div>
 </div>

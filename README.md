@@ -19,7 +19,7 @@ npm run build
 
 - Lockscreen promosi, pemilihan bahasa Indonesia/English, dan tipe pesanan.
 - Menu berkategori, modal kustomisasi paket, keranjang, serta perhitungan Rupiah real-time.
-- Pengiriman ke meja dengan keypad dan validasi nomor meja 1–99.
+- Keranjang yang langsung lanjut ke halaman pembayaran.
 - Simulasi QRIS, e-wallet, mobile banking, debit, dan tunai.
 - Splash sukses, nomor antrean, serta struk digital dengan reset otomatis.
 

@@ -21,24 +21,14 @@ const daftarPembayaran = [
     icon: 'fa-solid fa-qrcode',
   },
   {
-    id: 'wallet',
-    label: 'E-Wallet',
-    icon: 'fa-solid fa-wallet',
-  },
-  {
-    id: 'bank',
-    label: 'M-Banking',
-    icon: 'fa-solid fa-building-columns',
+    id: 'cash',
+    label: 'Tunai',
+    icon: 'fa-solid fa-money-bill-wave',
   },
   {
     id: 'debit',
     label: 'Debit',
     icon: 'fa-solid fa-credit-card',
-  },
-  {
-    id: 'cash',
-    label: 'Cash',
-    icon: 'fa-solid fa-money-bill-wave',
   },
 ]
 

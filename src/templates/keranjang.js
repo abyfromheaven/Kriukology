@@ -18,7 +18,7 @@ const templateKeranjang = `
       </div>
       <div class="header-belang w-16 sm:w-20 shrink-0"></div>
     </div>
-    <h1 class="display text-xl sm:text-2xl text-center text-[#231f20] py-2" data-text="cartTitle">KERANJANG</h1>
+    <h1 class="display font-black text-xl sm:text-2xl text-center text-[#231f20] py-2" data-text="cartTitle">KERANJANG</h1>
   </header>
 
   <main class="flex-1 min-h-0 overflow-y-auto scroll-clean px-4 sm:px-5 pt-1 pb-5">
@@ -34,7 +34,7 @@ const templateKeranjang = `
       <button data-action="navigasiKe:menu"
         class="min-h-11 rounded-xl border border-[#d51f32] bg-white text-[#d51f32] font-bold text-xs sm:text-sm active:scale-[0.98] transition"
         data-text="cartMore">Tambahkan Menu Lain</button>
-      <button data-action="navigasiKe:pengiriman"
+      <button data-action="navigasiKe:pembayaran"
         class="min-h-11 rounded-xl bg-[#d51f32] text-white font-black text-xs sm:text-sm active:scale-[0.98] transition"
         data-text="cartCheckout">Lanjut Bayar</button>
     </div>

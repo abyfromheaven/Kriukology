@@ -18,7 +18,7 @@ const templateStruk = `
       </p>
       <p class="text-[10px] tracking-[.2em] mt-1">STRUK DIGITAL</p>
       <p class="text-xs mt-4" data-bind="queueText"></p>
-      <h2 class="display text-6xl text-[#d51f32] mt-1" data-bind="nomorAntrean"></h2>
+      <h2 class="display font-black text-6xl text-[#d51f32] mt-1" data-bind="nomorAntrean"></h2>
     </div>
 
     <!-- Daftar Item yang Dipesan -->
@@ -27,7 +27,7 @@ const templateStruk = `
     <!-- Ringkasan Pesanan -->
     <div class="py-4 space-y-2 text-sm">
       <div class="flex justify-between">
-        <span class="text-stone-500">Pengiriman</span>
+        <span class="text-stone-500">Tipe Pesanan</span>
         <b data-bind="deliveryInfo"></b>
       </div>
       <div class="flex justify-between">

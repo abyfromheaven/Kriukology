@@ -18,7 +18,6 @@ import templateLayarScreensaver from './templates/layar-screensaver.js'
 import templatePreferensi from './templates/preferensi.js'
 import templateLayarMenu from './templates/layar-menu.js'
 import templateKeranjang from './templates/keranjang.js'
-import templatePengiriman from './templates/pengiriman.js'
 import templatePembayaran from './templates/pembayaran.js'
 import templateSukses from './templates/sukses.js'
 import templateStruk from './templates/struk.js'
@@ -32,7 +31,6 @@ const gabunganTemplate = `
   ${templatePreferensi}
   ${templateLayarMenu}
   ${templateKeranjang}
-  ${templatePengiriman}
   ${templatePembayaran}
   ${templateSukses}
   ${templateStruk}

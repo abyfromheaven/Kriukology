@@ -11,8 +11,7 @@
 
 const templatePreferensi = `
 <div data-screen="preferensi" style="display:none"
-     class="h-full flex flex-col items-center justify-between bg-white relative overflow-hidden"
-     style="font-family: 'Geist', ui-sans-serif, system-ui, sans-serif;">
+     class="h-full flex flex-col items-center justify-between bg-white relative overflow-hidden">
 
   <!-- ═══ TOP SECTION: Logo + Welcome Text ═══ -->
   <div class="flex flex-col items-center pt-10 relative z-10">

@@ -28,7 +28,7 @@
  * umpan balik audio (haptic-like feedback).
  *
  * Dipanggil dari: navigasiKe(), bukaMenu(), tambahKeKeranjang(),
- *                 ubahJumlah(), tekanKeypad(), selesaikanPesanan()
+ *                 ubahJumlah(), selesaikanPesanan()
  */
 function mainkanSuara() {
   try {

@@ -6,7 +6,7 @@
  * Kriukology. Menggunakan pola State Machine untuk navigasi antar layar.
  *
  * Alur navigasi (state machine):
- * screensaver → preferensi → menu → keranjang → pengiriman → pembayaran → sukses → struk → (auto-reset ke screensaver)
+ * screensaver → preferensi → menu → keranjang → pembayaran → sukses → struk → (auto-reset ke screensaver)
  *
  * Arsitektur rendering:
  * - Semua template di-inject sebagai HTML string ke DOM
@@ -33,8 +33,6 @@ class KioskApp {
     this.kategoriAktif = 'promotion'
     this.keranjang = []
     this.tampilKonfirmasiBatal = false
-    this.metodePengiriman = ''
-    this.nomorMeja = ''
     this.metodePembayaran = ''
     this.nomorAntrean = 'PD-001'
     this.timerIdle = null
@@ -62,18 +60,6 @@ class KioskApp {
   /** Menghitung total jumlah item di keranjang */
   dapatkanJumlahItem() {
     return this.keranjang.reduce((jumlah, baris) => jumlah + baris.jumlah, 0)
-  }
-
-  /** Mengecek apakah nomor meja valid (1-99) */
-  apakahMejaValid() {
-    const nomor = Number(this.nomorMeja)
-    return nomor >= 1 && nomor <= 99
-  }
-
-  /** Mengecek apakah pengguna bisa lanjut ke pembayaran */
-  apakahBisaBayar() {
-    return this.metodePengiriman === 'kasir' ||
-      (this.metodePengiriman === 'meja' && this.apakahMejaValid())
   }
 
   // ── METODE INTI ─────────────────────────────────────────────────────
@@ -220,19 +206,6 @@ class KioskApp {
     this.render()
   }
 
-  /** Menangani input nomor meja dari keypad virtual */
-  tekanKeypad(tombol) {
-    if (tombol === 'clear') {
-      this.nomorMeja = ''
-    } else if (tombol === 'delete') {
-      this.nomorMeja = this.nomorMeja.slice(0, -1)
-    } else if (this.nomorMeja.length < 2) {
-      this.nomorMeja += String(tombol)
-    }
-    mainkanSuara()
-    this.render()
-  }
-
   /** Memproses pesanan selesai */
   selesaikanPesanan() {
     mainkanSuara()
@@ -270,8 +243,6 @@ class KioskApp {
     this.keranjang = []
     this.kategoriAktif = 'promotion'
     this.tampilKonfirmasiBatal = false
-    this.metodePengiriman = ''
-    this.nomorMeja = ''
     this.metodePembayaran = ''
     this.render()
   }
@@ -366,25 +337,11 @@ class KioskApp {
         break
       }
 
-      case 'setMetodePengiriman':
-        this.metodePengiriman = argumen
-        if (argumen === 'kasir') this.nomorMeja = ''
-        mainkanSuara()
-        this.render()
-        break
-
-      case 'tekanKeypad': {
-        const nilaiTombol = argumen === 'delete' ? 'delete'
-          : argumen === 'clear' ? 'clear'
-          : Number(argumen)
-        this.tekanKeypad(nilaiTombol)
-        break
-      }
-
       case 'setMetodePembayaran':
         this.metodePembayaran = argumen
         mainkanSuara()
         this.render()
+        setTimeout(() => this.selesaikanPesanan(), 300)
         break
 
       case 'selesaikanPesanan':
@@ -426,7 +383,6 @@ class KioskApp {
     this.renderPreferensi()
     this.renderMenu()
     this.renderKeranjang()
-    this.renderPengiriman()
     this.renderPembayaran()
     this.renderStruk()
     this.renderSukses()
@@ -469,15 +425,15 @@ class KioskApp {
         </button>`
     } else if (qty > 0) {
       kontrolBawah = `
-        <div class="flex items-center justify-between h-8 px-1.5 bg-red-50/70 rounded-xl border border-[#d51f32]/20">
+        <div class="flex items-center justify-end gap-3">
           <button data-action="kurangiItem:${item.id}" aria-label="kurangi"
-            class="h-6 w-6 shrink-0 rounded-lg bg-white border border-[#d51f32] text-[#d51f32] flex items-center justify-center active:scale-95 transition shadow-xs">
-            <i class="fa-solid fa-minus text-[10px]"></i>
+            class="h-8 w-8 shrink-0 rounded-full border-2 border-[#d51f32] text-[#d51f32] flex items-center justify-center bg-white active:bg-[#d51f32]/10 transition">
+            <i class="fa-solid fa-minus text-xs"></i>
           </button>
-          <span class="font-black text-xs text-[#d51f32] tabular-nums">${qty}</span>
+          <span class="min-w-5 text-center font-black text-lg text-[#d51f32] tabular-nums">${qty}</span>
           <button data-action="tambahItem:${item.id}" aria-label="tambah"
-            class="h-6 w-6 shrink-0 rounded-lg bg-[#d51f32] text-white flex items-center justify-center active:scale-95 transition shadow-xs">
-            <i class="fa-solid fa-plus text-[10px]"></i>
+            class="h-8 w-8 shrink-0 rounded-full border-2 border-[#d51f32] text-[#d51f32] flex items-center justify-center bg-white active:bg-[#d51f32]/10 transition">
+            <i class="fa-solid fa-plus text-xs"></i>
           </button>
         </div>`
     } else {
@@ -551,51 +507,48 @@ class KioskApp {
       </article>`
   }
 
-  /** Membuat HTML metode pembayaran */
+  /** Membuat HTML 3 metode pembayaran (QRIS, Tunai, Debit) persis seperti sketsa layout */
   buatHTMLMetodePembayaran(metode) {
     const aktif = this.metodePembayaran === metode.id
     const kelasAktif = aktif
-      ? 'bg-[#d51f32] text-white border-[#d51f32]'
-      : 'bg-white border-stone-200'
+      ? 'bg-red-50/90 border-[#d51f32] text-[#d51f32] shadow-md ring-2 ring-[#d51f32]/25 scale-[1.03]'
+      : 'bg-stone-50/40 hover:bg-stone-50 border-stone-100 text-[#231f20] hover:shadow-sm'
+
+    let visualIcon = ''
+    if (metode.id === 'qris') {
+      visualIcon = `<div class="h-16 flex items-center justify-center">
+        <div class="px-2.5 py-1 bg-[#231f20] text-white font-black text-sm tracking-tighter rounded-md flex items-center gap-1 border border-stone-700 shadow-xs">
+          <i class="fa-solid fa-qrcode text-base text-[#d51f32]"></i>
+          <span>QRIS</span>
+        </div>
+      </div>`
+    } else if (metode.id === 'cash') {
+      visualIcon = `<div class="h-16 flex items-center justify-center relative">
+        <div class="w-12 h-8 rounded-md bg-emerald-100 border border-emerald-500 flex items-center justify-center shadow-xs">
+          <span class="text-[10px] font-black text-emerald-800">Rp</span>
+        </div>
+        <div class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-400 border border-amber-500 flex items-center justify-center shadow-xs">
+          <span class="text-[9px] font-bold text-amber-950">$</span>
+        </div>
+      </div>`
+    } else if (metode.id === 'debit') {
+      visualIcon = `<div class="h-16 flex items-center justify-center relative">
+        <div class="w-12 h-8 rounded-lg bg-amber-400 border border-amber-500 transform -rotate-12 absolute shadow-xs"></div>
+        <div class="w-12 h-8 rounded-lg bg-sky-500 border border-sky-600 flex flex-col justify-between p-1 shadow-md relative z-10">
+          <div class="w-2.5 h-2 bg-amber-300 rounded-xs"></div>
+          <div class="flex justify-between items-center text-[7px] text-white">
+            <span>••••</span>
+          </div>
+        </div>
+      </div>`
+    }
+
     return `
       <button data-action="setMetodePembayaran:${metode.id}"
-        class="rounded-xl border p-3 text-center ${kelasAktif}">
-        <i class="${metode.icon} text-lg"></i>
-        <span class="block text-[10px] font-bold mt-2">${metode.label}</span>
+        class="rounded-xl p-3 flex flex-col items-center justify-between text-center transition-all duration-200 border cursor-pointer ${kelasAktif}">
+        ${visualIcon}
+        <span class="text-xs sm:text-sm font-extrabold tracking-wide mt-2">${metode.label}</span>
       </button>`
-  }
-
-  /** Membuat HTML preview area pembayaran berdasarkan metode yang dipilih */
-  buatHTMLPreviewPembayaran() {
-    const t = (kunci) => this.terjemahkan(kunci)
-
-    if (this.metodePembayaran === 'qris') {
-      const selQR = Array.from({ length: 49 }, (_, i) => {
-        const kelas = (i + 1) % 3 === 0 || (i + 1) % 5 === 0 ? 'bg-[#231f20]' : 'bg-stone-100'
-        return `<i class="${kelas} rounded-[1px]"></i>`
-      }).join('')
-      return `
-        <div class="w-36 h-36 bg-white rounded-xl p-3 grid grid-cols-7 gap-1 mx-auto">${selQR}</div>
-        <p class="font-black mt-5">${t('scan')}</p>`
-    }
-
-    if (this.metodePembayaran === 'cash') {
-      return `
-        <i class="fa-solid fa-money-bill-wave text-6xl text-[#f5bd27]"></i>
-        <p class="font-black mt-5">${t('cash')}</p>`
-    }
-
-    if (this.metodePembayaran && this.metodePembayaran !== 'qris' && this.metodePembayaran !== 'cash') {
-      return `
-        <i class="fa-solid fa-mobile-screen-button text-6xl text-[#f5bd27]"></i>
-        <p class="font-black mt-5">Ikuti instruksi<br>di HP Anda</p>`
-    }
-
-    return `
-      <div class="text-white/40">
-        <i class="fa-solid fa-arrow-up text-3xl"></i>
-        <p class="font-bold mt-3">Pilih metode pembayaran</p>
-      </div>`
   }
 
   /** Membuat HTML item di struk digital */
@@ -720,49 +673,16 @@ class KioskApp {
     if (totalEl) totalEl.textContent = formatRupiah(this.dapatkanTotalHarga())
   }
 
-  /** Render layar pengiriman */
-  renderPengiriman() {
-    const el = document.querySelector('[data-screen="pengiriman"]')
-    if (!el) return
-
-    // Perbarui status aktif tombol metode pengiriman
-    el.querySelectorAll('[data-aktif-metode]').forEach(tombol => {
-      const aktif = tombol.dataset.aktifMetode === this.metodePengiriman
-      tombol.classList.toggle('bg-[#d51f32]', aktif)
-      tombol.classList.toggle('text-white', aktif)
-      tombol.classList.toggle('bg-white', !aktif)
-      tombol.classList.toggle('border', !aktif)
-      tombol.classList.toggle('border-stone-200', !aktif)
-    })
-
-    // Tampilkan/sembunyikan keypad berdasarkan metode pengiriman
-    const wadahKeypad = el.querySelector('[data-bind="keypadSection"]')
-    if (wadahKeypad) {
-      wadahKeypad.style.display = this.metodePengiriman === 'meja' ? '' : 'none'
-
-      if (this.metodePengiriman === 'meja') {
-        const tampilan = wadahKeypad.querySelector('[data-bind="mejaDisplay"]')
-        if (tampilan) tampilan.textContent = this.nomorMeja || '—'
-
-        const error = wadahKeypad.querySelector('[data-bind="mejaError"]')
-        if (error) error.style.display = this.nomorMeja && !this.apakahMejaValid() ? '' : 'none'
-      }
-    }
-
-    // Perbarui status tombol pembayaran
-    const tombolBayar = el.querySelector('[data-bind="payBtn"]')
-    if (tombolBayar) {
-      const bisaBayar = this.apakahBisaBayar()
-      tombolBayar.disabled = !bisaBayar
-      tombolBayar.classList.toggle('disabled:bg-stone-300', !bisaBayar)
-      tombolBayar.classList.toggle('bg-[#231f20]', bisaBayar)
-    }
-  }
-
   /** Render layar pembayaran */
   renderPembayaran() {
     const el = document.querySelector('[data-screen="pembayaran"]')
     if (!el) return
+
+    // Perbarui teks total harga di card Total Pembayaran
+    const elTotal = el.querySelector('[data-bind="totalHargaBayar"]')
+    if (elTotal) {
+      elTotal.textContent = formatRupiah(this.dapatkanTotalHarga())
+    }
 
     // Render grid metode pembayaran
     const wadahMetode = el.querySelector('[data-list="metodePembayaran"]')
@@ -772,15 +692,7 @@ class KioskApp {
         .join('')
     }
 
-    // Render area preview instruksi pembayaran
-    const wadahPreview = el.querySelector('[data-bind="paymentPreview"]')
-    if (wadahPreview) {
-      const htmlPreview = this.buatHTMLPreviewPembayaran()
-      const htmlTotal = `<p class="mt-7 text-2xl font-black text-[#f5bd27]">${formatRupiah(this.dapatkanTotalHarga())}</p>`
-      wadahPreview.innerHTML = htmlPreview + htmlTotal
-    }
-
-    // Perbarui status tombol simulasi
+    // Perbarui status tombol simulasi selesaikan pembayaran
     const tombolSimulasi = el.querySelector('[data-bind="simulateBtn"]')
     if (tombolSimulasi) {
       tombolSimulasi.disabled = !this.metodePembayaran
@@ -822,12 +734,10 @@ class KioskApp {
         .join('')
     }
 
-    // Perbarui info pengiriman
-    const elPengiriman = el.querySelector('[data-bind="deliveryInfo"]')
-    if (elPengiriman) {
-      elPengiriman.textContent = this.metodePengiriman === 'meja'
-        ? t('served') + ' ' + this.nomorMeja
-        : t('counter')
+    // Perbarui tipe pesanan
+    const elTipe = el.querySelector('[data-bind="deliveryInfo"]')
+    if (elTipe) {
+      elTipe.textContent = this.tipePesanan === 'take' ? t('take') : t('dine')
     }
 
     // Perbarui status pembayaran

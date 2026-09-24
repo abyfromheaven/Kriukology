@@ -3,10 +3,10 @@
  * STYLE GLOBAL: KRIOKOLOGY KIOSK
  * ==========================================================================
  * File CSS utama yang berisi:
- * 1. Import library eksternal (Animate.css, Font Awesome, Google Fonts)
+ * 1. Import library eksternal (Animate.css, Font Awesome)
  * 2. Tailwind CSS directives
  * 3. Custom CSS variables dan base styles
- * 4. Typography system (Geist Sans)
+ * 4. Typography system (Geist Sans, file lokal folder /Geist)
  * 5. Screen shell container (frame kiosk)
  * 6. Decorative patterns (grid noise, ticket edge, perforated)
  * 7. Food visual effects (radial gradient)
@@ -17,7 +17,6 @@
 /* ── Import Library Eksternal ────────────────────────────────────────── */
 @import 'animate.css';
 @import '@fortawesome/fontawesome-free/css/all.min.css';
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&display=swap');
 
 /* ── Tailwind CSS Directives ─────────────────────────────────────────── */
 @tailwind base;
@@ -26,18 +25,40 @@
 
 /* ── Base Styles ─────────────────────────────────────────────────────── */
 :root {
+  --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
   color: #2a2424;
   background: #f6f1e8;
-  font-family: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans);
 }
 
 * { box-sizing: border-box; }
 body { min-width: 320px; margin: 0; }
 
+/* Semua elemen penampil teks memakai Geist Sans */
+html, body, button, input, select, textarea, code, pre {
+  font-family: var(--font-sans);
+}
+
 /* ── Typography System ───────────────────────────────────────────────── */
-/* Geist Sans digunakan untuk seluruh teks di project ini */
+/* Geist Sans dari file lokal folder /Geist — satu-satunya font teks project */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../Geist/Geist-VariableFont_wght.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Geist';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../Geist/Geist-Italic-VariableFont_wght.ttf') format('truetype');
+}
+
 .display {
-  font-family: 'Geist', Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+  font-family: var(--font-sans);
   letter-spacing: .06em;
 }
 
