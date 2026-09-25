@@ -6,14 +6,7 @@
  * Kriukology. Menggunakan pola State Machine untuk navigasi antar layar.
  *
  * Alur navigasi (state machine):
- * screensaver → preferensi → menu → keranjang → pembayaran → sukses → struk → (auto-reset ke screensaver)
- *
- * Arsitektur rendering:
- * - Semua template di-inject sebagai HTML string ke DOM
- * - Setiap state change memanggil render() yang update DOM secara imperatif
- * - Event handling via document-level delegation (data-action attributes)
- * - Text binding via data-text attributes
- * - Conditional rendering via data-screen + style.display
+ * screensaver → preferensi → menu → keranjang → pembayaran → qris → sukses → struk → (auto-reset ke screensaver)
  * ==========================================================================
  */
 
@@ -22,7 +15,8 @@ import daftarKategori from '../data/kategori.js'
 import daftarMetodePembayaran from '../data/pembayaran.js'
 import kamus from '../data/kamus.js'
 import formatRupiah from '../utils/format.js'
-import mainkanSuara from '../utils/audio.js'
+import mainkanSuara, { mainkanSuaraCash } from '../utils/audio.js'
+import { kirimSinyalPembayaranSukses, dengarkanSinyalPembayaranSukses } from '../utils/paymentChannel.js'
 
 class KioskApp {
   constructor() {
@@ -40,9 +34,42 @@ class KioskApp {
     this.timerPoster = null
     this.detikStruk = 15
 
+    // ── State QRIS ─────────────────────────────────────────────────────
+    this.statusQris = 'menunggu' // 'menunggu' | 'sukses'
+    this.timerQrisSukses = null
+
+    this.inisialisasiListenerPembayaran()
     this.resetWaktuIdle()
     this.bindPeristiwa()
     this.render()
+  }
+
+  /** Inisialisasi listener sinyal pembayaran inter-tab (BroadcastChannel / LocalStorage) */
+  inisialisasiListenerPembayaran() {
+    dengarkanSinyalPembayaranSukses((data) => {
+      if (this.langkah === 'qris' && this.statusQris === 'menunggu') {
+        const totalHarga = this.dapatkanTotalHarga() || 15000
+        const dibayar = Number(data && data.total) || 0
+
+        // Pengecekan apakah jumlah pembayaran sesuai/cukup dengan total tagihan
+        if (dibayar > 0 && dibayar < totalHarga) {
+          const txtStatus = document.querySelector('[data-bind="qrisStatusText"]')
+          if (txtStatus) {
+            txtStatus.textContent = `Pembayaran Kurang (${formatRupiah(dibayar)} < ${formatRupiah(totalHarga)})`
+          }
+          return
+        }
+
+        this.statusQris = 'sukses'
+        mainkanSuaraCash()
+        this.render()
+
+        clearTimeout(this.timerQrisSukses)
+        this.timerQrisSukses = setTimeout(() => {
+          this.selesaikanPesanan()
+        }, 2200)
+      }
+    })
   }
 
   // ── PROPERTI TURUNAN (Computed) ─────────────────────────────────────
@@ -83,24 +110,18 @@ class KioskApp {
     if (semuaPoster.length <= 1) return
 
     this.timerPoster = setInterval(() => {
-      // Poster saat ini keluar ke kiri
       semuaPoster[indeksSekarang].classList.remove('aktif')
       semuaPoster[indeksSekarang].classList.add('sebelumnya')
 
-      // Poster berikutnya masuk dari kanan
       indeksSekarang = (indeksSekarang + 1) % semuaPoster.length
       semuaPoster[indeksSekarang].classList.remove('sebelumnya')
       semuaPoster[indeksSekarang].classList.add('aktif')
 
-      // Setelah transisi selesai, reset poster yang keluar tanpa animasi
       const indeksBersihkan = (indeksSekarang - 1 + semuaPoster.length) % semuaPoster.length
       setTimeout(() => {
-        // Disable transisi agar snap ke posisi awal (kanan, off-screen)
         semuaPoster[indeksBersihkan].style.transition = 'none'
         semuaPoster[indeksBersihkan].classList.remove('sebelumnya')
-        // Force reflow agar posisi langsung diterapkan
         semuaPoster[indeksBersihkan].offsetHeight
-        // Enable transisi lagi untuk cycle berikutnya
         semuaPoster[indeksBersihkan].style.transition = ''
       }, 850)
     }, 6000)
@@ -149,7 +170,7 @@ class KioskApp {
     return baris ? baris.jumlah : 0
   }
 
-  /** Menambahkan item langsung ke keranjang (tanpa modal kustomisasi) */
+  /** Menambahkan item langsung ke keranjang */
   tambahItemLangsung(id) {
     const item = daftarMenu.find(m => m.id === id)
     if (!item || item.habis) return
@@ -239,11 +260,13 @@ class KioskApp {
   aturUlang() {
     clearTimeout(this.timerIdle)
     clearInterval(this.timerStruk)
+    clearTimeout(this.timerQrisSukses)
     this.langkah = 'screensaver'
     this.keranjang = []
     this.kategoriAktif = 'promotion'
     this.tampilKonfirmasiBatal = false
     this.metodePembayaran = ''
+    this.statusQris = 'menunggu'
     this.render()
   }
 
@@ -294,7 +317,6 @@ class KioskApp {
         this.tipePesanan = argumen
         mainkanSuara()
         this.render()
-        // Brief delay for visual feedback before navigating
         setTimeout(() => this.navigasiKe('menu'), 250)
         break
 
@@ -340,15 +362,17 @@ class KioskApp {
       case 'setMetodePembayaran':
         this.metodePembayaran = argumen
         mainkanSuara()
-        this.render()
-        setTimeout(() => this.selesaikanPesanan(), 300)
+        if (argumen === 'qris') {
+          this.statusQris = 'menunggu'
+          this.navigasiKe('qris')
+        } else {
+          this.render()
+          setTimeout(() => this.selesaikanPesanan(), 300)
+        }
         break
 
       case 'selesaikanPesanan':
         this.selesaikanPesanan()
-        break
-
-      case 'hentiPenyebaran':
         break
 
       default:
@@ -384,13 +408,14 @@ class KioskApp {
     this.renderMenu()
     this.renderKeranjang()
     this.renderPembayaran()
+    this.renderQris()
     this.renderStruk()
     this.renderSukses()
   }
 
   // ── HELPER: PEMBUATAN HTML ──────────────────────────────────────────
 
-  /** Membuat HTML tombol kategori — clean borderless, teks merah saat aktif */
+  /** Membuat HTML tombol kategori */
   buatHTMLKategori(kategori) {
     const aktif = this.kategoriAktif === kategori.id
     const kelasTeks = aktif
@@ -405,7 +430,7 @@ class KioskApp {
       </button>`
   }
 
-  /** Membuat HTML kartu item menu — lonjong ke bawah (vertical portrait), foto Unsplash besar eye-catching, ultra minimalist & clean */
+  /** Membuat HTML kartu item menu */
   buatHTMLItemMenu(item) {
     const qty = this.dapatkanQtyItem(item.id)
     const habis = Boolean(item.habis)
@@ -464,7 +489,7 @@ class KioskApp {
       </article>`
   }
 
-  /** Membuat HTML detail kustomisasi (kosong jika tanpa modal) */
+  /** Membuat HTML detail kustomisasi */
   buatDetailKustomisasi(kustomisasi) {
     if (!kustomisasi) return ''
     const bagian = [kustomisasi.potongan, kustomisasi.minuman, kustomisasi.saus]
@@ -507,7 +532,7 @@ class KioskApp {
       </article>`
   }
 
-  /** Membuat HTML 3 metode pembayaran (QRIS, Tunai, Debit) persis seperti sketsa layout */
+  /** Membuat HTML 3 metode pembayaran */
   buatHTMLMetodePembayaran(metode) {
     const aktif = this.metodePembayaran === metode.id
     const kelasAktif = aktif
@@ -551,7 +576,6 @@ class KioskApp {
     if (!el) return
     const t = (kunci) => this.terjemahkan(kunci)
 
-    // Perbarui subtitle dengan highlight merah
     const subEl = el.querySelector('[data-bind="welcomeSub"]')
     if (subEl) {
       const teks = t('welcomeSub')
@@ -562,26 +586,23 @@ class KioskApp {
       }
     }
 
-    // Perbarui status aktif tombol bendera bahasa
     el.querySelectorAll('[data-aktif-bahasa]').forEach(tombol => {
       const aktif = tombol.dataset.aktifBahasa === this.bahasa
       tombol.classList.toggle('flag-aktif', aktif)
     })
 
-    // Perbarui status aktif tombol tipe pesanan
     el.querySelectorAll('[data-aktif-tipe]').forEach(tombol => {
       const aktif = this.tipePesanan && tombol.dataset.aktifTipe === this.tipePesanan
       tombol.classList.toggle('card-aktif', aktif)
     })
   }
 
-  /** Render layar menu — rebuild total sesuai sketsa */
+  /** Render layar menu */
   renderMenu() {
     const el = document.querySelector('[data-screen="menu"]')
     if (!el) return
     const t = (kunci) => this.terjemahkan(kunci)
 
-    // Judul kategori aktif
     const judulKategori = el.querySelector('[data-bind="judulKategori"]')
     if (judulKategori) {
       const kategori = daftarKategori.find(kat => kat.id === this.kategoriAktif)
@@ -590,20 +611,17 @@ class KioskApp {
         : t('menu')
     }
 
-    // Sidebar kategori
     const wadahKategori = el.querySelector('[data-list="kategori"]')
     if (wadahKategori) {
       wadahKategori.innerHTML = daftarKategori.map(kat => this.buatHTMLKategori(kat)).join('')
     }
 
-    // Grid card produk (2 kolom)
     const wadahMenu = el.querySelector('[data-list="menuTampil"]')
     if (wadahMenu) {
       const itemMenu = this.dapatkanMenuTampil()
       wadahMenu.innerHTML = itemMenu.map(item => this.buatHTMLItemMenu(item)).join('')
     }
 
-    // Status pesanan: slide in/out + count + total
     const statusEl = el.querySelector('[data-bind="statusPesanan"]')
     const jumlah = this.dapatkanJumlahItem()
     el.classList.toggle('punya-pesanan', jumlah > 0)
@@ -618,13 +636,11 @@ class KioskApp {
       if (totalEl) totalEl.textContent = formatRupiah(this.dapatkanTotalHarga())
     }
 
-    // Perbarui status aktif tombol bahasa di utility dock sidebar
     el.querySelectorAll('[data-aktif-bahasa]').forEach(tombol => {
       const aktif = tombol.dataset.aktifBahasa === this.bahasa
       tombol.classList.toggle('flag-aktif', aktif)
     })
 
-    // Modal konfirmasi batalkan
     const konfirmasiEl = el.querySelector('[data-bind="konfirmasiBatal"]')
     if (konfirmasiEl) {
       konfirmasiEl.style.display = this.tampilKonfirmasiBatal ? '' : 'none'
@@ -636,7 +652,6 @@ class KioskApp {
     const el = document.querySelector('[data-screen="keranjang"]')
     if (!el) return
 
-    // Render daftar item keranjang
     const wadahItem = el.querySelector('[data-list="keranjangItems"]')
     if (wadahItem) {
       wadahItem.innerHTML = this.keranjang
@@ -644,7 +659,6 @@ class KioskApp {
         .join('')
     }
 
-    // Perbarui total harga
     const totalEl = el.querySelector('[data-bind="totalHargaKeranjang"]')
     if (totalEl) totalEl.textContent = formatRupiah(this.dapatkanTotalHarga())
   }
@@ -654,18 +668,46 @@ class KioskApp {
     const el = document.querySelector('[data-screen="pembayaran"]')
     if (!el) return
 
-    // Perbarui teks total harga di card Total Pembayaran
     const elTotal = el.querySelector('[data-bind="totalHargaBayar"]')
     if (elTotal) {
       elTotal.textContent = formatRupiah(this.dapatkanTotalHarga())
     }
 
-    // Render grid metode pembayaran
     const wadahMetode = el.querySelector('[data-list="metodePembayaran"]')
     if (wadahMetode) {
       wadahMetode.innerHTML = daftarMetodePembayaran
         .map(metode => this.buatHTMLMetodePembayaran(metode))
         .join('')
+    }
+  }
+
+  /** Render layar QRIS Kiosk */
+  renderQris() {
+    const el = document.querySelector('[data-screen="qris"]')
+    if (!el) return
+
+    const total = this.dapatkanTotalHarga() || 15000
+
+    const elTotal = el.querySelector('[data-bind="totalHargaQris"]')
+    if (elTotal) {
+      elTotal.textContent = formatRupiah(total)
+    }
+
+    // Bind link /danu.html dengan parameter ?amount=...
+    const linkDanu = el.querySelector('[data-bind="linkDanu"]')
+    if (linkDanu) {
+      linkDanu.href = `/danu.html?amount=${total}`
+    }
+
+    const waitingEl = el.querySelector('[data-bind="qrisStatusWaiting"]')
+    const splashEl = el.querySelector('[data-bind="qrisSuccessSplash"]')
+
+    if (this.statusQris === 'sukses') {
+      if (waitingEl) waitingEl.style.display = 'none'
+      if (splashEl) splashEl.style.display = ''
+    } else {
+      if (waitingEl) waitingEl.style.display = ''
+      if (splashEl) splashEl.style.display = 'none'
     }
   }
 
@@ -688,15 +730,12 @@ class KioskApp {
     if (!el) return
     const t = (kunci) => this.terjemahkan(kunci)
 
-    // Perbarui teks antrean
     const elAntrean = el.querySelector('[data-bind="queueText"]')
     if (elAntrean) elAntrean.textContent = t('queue')
 
-    // Perbarui nomor antrean
     const elNomor = el.querySelector('[data-bind="nomorAntrean"]')
     if (elNomor) elNomor.textContent = this.nomorAntrean
 
-    // Render daftar item di struk
     const wadahItem = el.querySelector('[data-list="strukItems"]')
     if (wadahItem) {
       wadahItem.innerHTML = this.keranjang
@@ -704,20 +743,17 @@ class KioskApp {
         .join('')
     }
 
-    // Perbarui tipe pesanan
     const elTipe = el.querySelector('[data-bind="deliveryInfo"]')
     if (elTipe) {
       elTipe.textContent = this.tipePesanan === 'take' ? t('take') : t('dine')
     }
 
-    // Perbarui status pembayaran
     const elStatus = el.querySelector('[data-bind="statusPembayaran"]')
     if (elStatus) {
       elStatus.textContent = this.metodePembayaran === 'cash' ? 'PENDING' : 'PAID'
       elStatus.classList.add('text-[#268c57]')
     }
 
-    // Perbarui total harga
     const elTotal = el.querySelector('[data-bind="totalHargaStruk"]')
     if (elTotal) elTotal.textContent = formatRupiah(this.dapatkanTotalHarga())
   }
