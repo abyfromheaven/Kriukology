@@ -278,6 +278,16 @@ button:focus-visible { outline: 3px solid #f5bd27; outline-offset: 3px; }
 }
 
 /* ── Accessibility: Reduced Motion ──────────────────────────────────── */
+/* ── QR Dinamis: Layar QRIS (library qrcodejs) ─────────────────────── */
+/* qrcodejs menaruh <canvas> + <img> di dalam wadah, keduanya dibuat
+   pas mengisi kotak 176px (w-44 h-44) agar QR tidak gepeng/kebesaran. */
+[data-bind="qrisQrBox"] > canvas,
+[data-bind="qrisQrBox"] > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .01ms !important;

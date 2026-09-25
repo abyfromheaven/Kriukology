@@ -18,6 +18,17 @@ import formatRupiah from '../utils/format.js'
 import mainkanSuara, { mainkanSuaraCash } from '../utils/audio.js'
 import { kirimSinyalPembayaranSukses, dengarkanSinyalPembayaranSukses } from '../utils/paymentChannel.js'
 
+// ── KONFIGURASI QRIS ────────────────────────────────────────────────
+// Path tujuan QR Code pada layar QRIS.
+// Nilai relatif (diawali "/") otomatis dibuat absolut memakai
+// protocol + IP/host + port yang sedang menjalankan website,
+// jadi tidak perlu ganti config saat pindah device/server.
+// Tulis URL lengkap (https://...) bila tujuannya di luar server ini.
+const QRIS_LINK_DASAR = '/danu.html'
+// true  → QR berisi <link>?amount=<total belanja>
+// false → QR berisi <link> saja tanpa nominal
+const QRIS_SERTAKAN_NOMINAL = true
+
 class KioskApp {
   constructor() {
     // ── State Aplikasi ─────────────────────────────────────────────────
@@ -37,6 +48,8 @@ class KioskApp {
     // ── State QRIS ─────────────────────────────────────────────────────
     this.statusQris = 'menunggu' // 'menunggu' | 'sukses'
     this.timerQrisSukses = null
+    this.qrInstance = null
+    this.urlQrisTerakhir = ''
 
     this.inisialisasiListenerPembayaran()
     this.resetWaktuIdle()
@@ -87,6 +100,24 @@ class KioskApp {
   /** Menghitung total jumlah item di keranjang */
   dapatkanJumlahItem() {
     return this.keranjang.reduce((jumlah, baris) => jumlah + baris.jumlah, 0)
+  }
+
+  /** Asal server: protocol + IP/host + port yang menjalankan website */
+  dapatkanAsalServer() {
+    const { protocol, origin } = window.location
+    return protocol === 'http:' || protocol === 'https:' ? origin : ''
+  }
+
+  /** Membangun URL tujuan scan QRIS mengikuti IP/host server yang berjalan */
+  dapatkanUrlQris(total) {
+    const dasar = /^https?:\/\//i.test(QRIS_LINK_DASAR)
+      ? QRIS_LINK_DASAR
+      : `${this.dapatkanAsalServer()}${QRIS_LINK_DASAR.startsWith('/') ? '' : '/'}${QRIS_LINK_DASAR}`
+
+    if (!QRIS_SERTAKAN_NOMINAL) return dasar
+
+    const pemisah = dasar.includes('?') ? '&' : '?'
+    return `${dasar}${pemisah}amount=${total}`
   }
 
   // ── METODE INTI ─────────────────────────────────────────────────────
@@ -693,10 +724,36 @@ class KioskApp {
       elTotal.textContent = formatRupiah(total)
     }
 
-    // Bind link /danu.html dengan parameter ?amount=...
+    // URL tujuan scan: IP/host server yang berjalan + nominal (opsional)
+    const urlQris = this.dapatkanUrlQris(total)
+
+    // Bind link ke tombol "Buka Layar Danu"
     const linkDanu = el.querySelector('[data-bind="linkDanu"]')
     if (linkDanu) {
-      linkDanu.href = `/danu.html?amount=${total}`
+      linkDanu.href = urlQris
+    }
+
+    // Generate QR Code dinamis (hanya saat URL berubah)
+    const boxQr = el.querySelector('[data-bind="qrisQrBox"]')
+    const KodeQR = window.QRCode
+    if (boxQr && urlQris !== this.urlQrisTerakhir) {
+      if (!KodeQR) {
+        console.warn('[QRIS] Library QR belum termuat. Cek file /qrcode.js dan tag script di index.html.')
+      } else if (!this.qrInstance) {
+        this.qrInstance = new KodeQR(boxQr, {
+          text: urlQris,
+          width: 176,
+          height: 176,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: KodeQR.CorrectLevel.H,
+        })
+        this.urlQrisTerakhir = urlQris
+      } else {
+        this.qrInstance.clear()
+        this.qrInstance.makeCode(urlQris)
+        this.urlQrisTerakhir = urlQris
+      }
     }
 
     const waitingEl = el.querySelector('[data-bind="qrisStatusWaiting"]')

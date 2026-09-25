@@ -3,7 +3,10 @@
  * TEMPLATE: LAYAR QRIS (KIOSK)
  * ==========================================================================
  * Layar konfirmasi pembayaran QRIS pada Kiosk Kriukology.
- * 1. Menampilkan QR Code SVG Danu (qrcode danu.svg) yang mengarah ke /danu.html
+ * 1. Menampilkan QR Code dinamis (library davidshimjs/qrcodejs, /qrcode.js)
+ *    yang mengikuti IP/host server yang menjalankan website
+ *    (window.location.origin) + path QRIS_LINK_DASAR (+ ?amount=total).
+ *    Jadi tidak perlu config ulang saat pindah device/server.
  * 2. Menampilkan status "Menunggu Pembayaran..."
  * 3. Mengirimkan jumlah tagihan ke Danu agar dilakukan validasi kecocokan nominal.
  * 4. Ketika pembayaran diselesaikan di layar Danu, layar ini menampilkan
@@ -39,7 +42,7 @@ const templateLayarQris = `
         <p class="text-xl sm:text-2xl font-black text-[#d51f32] mt-0.5 tabular-nums" data-bind="totalHargaQris">Rp0</p>
       </div>
 
-      <!-- Card QR Code Statis (Memakai SVG qrcode danu.svg) -->
+      <!-- Card QR Code Dinamis (Digenerate oleh qrcodejs mengikuti link di kode) -->
       <div class="bg-white rounded-3xl p-5 shadow-[0_12px_32px_rgba(42,36,36,0.12)] border border-stone-100 flex flex-col items-center gap-3 text-center w-full max-w-[280px]">
         
         <div class="flex items-center gap-2 mb-1">
@@ -51,8 +54,8 @@ const templateLayarQris = `
           title="Klik untuk membuka Layar Danu (Simulasi DANA)"
           class="group relative p-2.5 bg-white rounded-2xl border-2 border-dashed border-sky-400 hover:border-sky-600 transition flex flex-col items-center justify-center cursor-pointer shadow-inner">
           
-          <!-- Asset SVG qrcode danu.svg -->
-          <img src="/assets/qrcode danu.svg" alt="QR Code Danu" class="w-44 h-44 object-contain group-hover:scale-[1.02] transition-transform duration-200" />
+          <!-- Wadah QR Code dinamis (diisi library qrcodejs) -->
+          <div data-bind="qrisQrBox" class="w-44 h-44 group-hover:scale-[1.02] transition-transform duration-200"></div>
 
           <span class="mt-2 text-[10px] font-bold text-sky-600 group-hover:underline flex items-center gap-1">
             <i class="fa-solid fa-arrow-up-right-from-square"></i> Buka Layar Danu (/danu.html)
