@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Product Requirement Document (PRD).md",
+                "file": "roadmap-dev.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Product Requirement Document (PRD)"
+              "title": "roadmap-dev"
             }
           }
         ]
@@ -191,6 +191,7 @@
   },
   "active": "11e69b34f475b130",
   "lastOpenFiles": [
+    "PRD POS & KDS.md",
     "Product Requirement Document (PRD).md"
   ]
 }
