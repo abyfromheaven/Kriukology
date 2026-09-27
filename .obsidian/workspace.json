@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "roadmap-dev.md",
+                "file": "development-document/Roadmap/PRD Development Self Ordering Kiosk.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "roadmap-dev"
+              "title": "PRD Development Self Ordering Kiosk"
             }
           }
         ]
@@ -191,6 +191,7 @@
   },
   "active": "11e69b34f475b130",
   "lastOpenFiles": [
+    "development-document/Roadmap/PRD Development Self Ordering Kiosk.md",
     "PRD POS & KDS.md",
     "Product Requirement Document (PRD).md"
   ]
