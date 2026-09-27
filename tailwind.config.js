@@ -1,6 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{js,css}'],
+  content: [
+    './index.html',
+    './danu.html',
+    './src/**/*.{js,css}',
+    './resources/views/**/*.blade.php',
+  ],
   theme: {
     fontFamily: {
       sans: ['Geist', 'ui-sans-serif', 'system-ui', 'sans-serif'],
