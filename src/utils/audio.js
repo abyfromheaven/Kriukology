@@ -2,14 +2,17 @@
  * ==========================================================================
  * UTILITAS AUDIO (SUARA TOMBOL & CASH REGISTER)
  * ==========================================================================
- * Berisi fungsi untuk memutar suara singkat (beep) saat tombol ditekan
- * dan suara cash register ("cha-ching") saat pembayaran QRIS berhasil.
- * Menggunakan Web Audio API sehingga tidak perlu file audio eksternal.
+ * Berisi fungsi untuk memutar suara singkat (beep) saat tombol ditekan,
+ * suara cash register ("cha-ching") untuk splash sukses kiosk, serta
+ * pemutar file audio lokal (mis. sound sukses Danu).
+ * Semuanya berjalan offline tanpa perlu koneksi internet.
  * ==========================================================================
  */
 
 /**
  * mainkanSuara — Memutar suara tombol singkat (beep)
+ * Dipakai untuk SEMUAS klik: screensaver, kategori, tambah item, dst.
+ * Volume sengaja dibuat tinggi agar terdengar jelas di ruang restoran.
  */
 function mainkanSuara() {
   try {
@@ -18,17 +21,35 @@ function mainkanSuara() {
     const pengaturVolume = konteksAudio.createGain()
 
     osilator.frequency.value = 620
-    pengaturVolume.gain.setValueAtTime(0.035, konteksAudio.currentTime)
+    pengaturVolume.gain.setValueAtTime(0.8, konteksAudio.currentTime)
     pengaturVolume.gain.exponentialRampToValueAtTime(
       0.001,
-      konteksAudio.currentTime + 0.07
+      konteksAudio.currentTime + 0.12
     )
 
     osilator.connect(pengaturVolume).connect(konteksAudio.destination)
     osilator.start()
-    osilator.stop(konteksAudio.currentTime + 0.08)
+    osilator.stop(konteksAudio.currentTime + 0.13)
   } catch (e) {
     // Abaikan jika browser tidak mendukung Web Audio API
+  }
+}
+
+/**
+ * mainkanFileSuara — Memutar file audio lokal (mis. /assets/sound/dana.mp3)
+ * Aman dipanggil dari event handler (sudah ada interaksi user, jadi
+ * kebijakan autoplay browser mengizinkan pemutaran).
+ */
+export function mainkanFileSuara(src) {
+  try {
+    const audio = new Audio(src)
+    audio.volume = 1
+    const proses = audio.play()
+    if (proses && typeof proses.catch === 'function') {
+      proses.catch(() => {})
+    }
+  } catch (e) {
+    // Abaikan jika file tidak ada / tidak didukung
   }
 }
 

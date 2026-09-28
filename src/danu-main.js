@@ -11,7 +11,7 @@
 import './style.css'
 import templateLayarDanu from './templates/layar-danu.js'
 import formatRupiah from './utils/format.js'
-import mainkanSuara, { mainkanSuaraCash } from './utils/audio.js'
+import mainkanSuara, { mainkanFileSuara } from './utils/audio.js'
 import { kirimSinyalPembayaranSukses } from './utils/paymentChannel.js'
 
 class DanuApp {
@@ -98,7 +98,8 @@ class DanuApp {
         }
 
         // Nominal sesuai / cukup -> Eksekusi Transaksi Berhasil
-        mainkanSuaraCash()
+        // Sound sukses khas Danu (file lokal, bukan suara kiosk)
+        mainkanFileSuara('/assets/sound/dana.mp3')
         kirimSinyalPembayaranSukses({
           total: numEntered,
           tagihan: this.tagihanKiosk,

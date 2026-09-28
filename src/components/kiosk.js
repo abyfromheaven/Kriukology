@@ -43,7 +43,12 @@ class KioskApp {
     this.timerIdle = null
     this.timerStruk = null
     this.timerPoster = null
-    this.detikStruk = 15
+    this.detikStruk = 10
+
+    // ── State Alert Idle (AFK Anti Reset Zonk) ──────────────────────────
+    this.timerAlertIdle = null
+    this.alertIdleAktif = false
+    this.detikAlertIdle = 15
 
     // ── State QRIS ─────────────────────────────────────────────────────
     this.statusQris = 'menunggu' // 'menunggu' | 'sukses'
@@ -74,7 +79,6 @@ class KioskApp {
         }
 
         this.statusQris = 'sukses'
-        mainkanSuaraCash()
         this.render()
 
         clearTimeout(this.timerQrisSukses)
@@ -169,13 +173,68 @@ class KioskApp {
     this.render()
   }
 
-  /** Reset timer idle timeout (60 detik) */
+  /** Durasi idle (detik) yang sadar-konteks sesuai layar aktif */
+  dapatkanDetikIdle() {
+    // Fase 3 (Menu) & Fase 4 (Keranjang): masa melamun lebih lama
+    if (this.langkah === 'menu' || this.langkah === 'keranjang') return 120
+    // Fase 2 (Preferensi), Fase 5 (Pembayaran & QRIS)
+    return 90
+  }
+
+  /** Reset timer idle, sekaligus menutup alert bila sedang terbuka */
   resetWaktuIdle() {
     clearTimeout(this.timerIdle)
-    const layarTanpaIdle = ['screensaver', 'sukses', 'struk']
-    if (!layarTanpaIdle.includes(this.langkah)) {
-      this.timerIdle = setTimeout(() => this.aturUlang(), 60000)
+
+    // Skenario A: ada sentuhan → keranjang aman, hitung mundur dibatalkan
+    if (this.alertIdleAktif) {
+      clearInterval(this.timerAlertIdle)
+      this.alertIdleAktif = false
+      this.perbaruiAlertIdle()
     }
+
+    const layarTanpaIdle = ['screensaver', 'sukses', 'struk']
+    if (layarTanpaIdle.includes(this.langkah)) return
+
+    this.timerIdle = setTimeout(
+      () => this.tampilkanAlertIdle(),
+      this.dapatkanDetikIdle() * 1000
+    )
+  }
+
+  /** Menampilkan modal peringatan hitung mundur (15 detik) sebelum reset */
+  tampilkanAlertIdle() {
+    this.alertIdleAktif = true
+    this.detikAlertIdle = 15
+    this.perbaruiAlertIdle()
+
+    clearInterval(this.timerAlertIdle)
+    this.timerAlertIdle = setInterval(() => {
+      this.detikAlertIdle--
+      this.perbaruiAlertIdle()
+      if (this.detikAlertIdle <= 0) this.skenarioIdleHabis()
+    }, 1000)
+  }
+
+  /** Memperbarui visibilitas modal alert & angka hitung mundurnya */
+  perbaruiAlertIdle() {
+    const modal = document.querySelector('[data-bind="alertIdleModal"]')
+    if (modal) modal.style.display = this.alertIdleAktif ? '' : 'none'
+
+    const angka = document.querySelector('[data-bind="alertIdleDetik"]')
+    if (angka) angka.textContent = String(Math.max(this.detikAlertIdle, 0))
+  }
+
+  /** Skenario A: pelanggan menekan "Ya, Saya Masih Pesan" → pesanan aman */
+  lanjutkanIdle() {
+    this.resetWaktuIdle()
+  }
+
+  /** Skenario B: hitung mundur habis → bersihkan pesanan & ke Screensaver */
+  skenarioIdleHabis() {
+    clearInterval(this.timerAlertIdle)
+    this.alertIdleAktif = false
+    this.perbaruiAlertIdle()
+    this.aturUlang()
   }
 
   /** Menambah atau mengurangi jumlah item di keranjang */
@@ -260,7 +319,15 @@ class KioskApp {
 
   /** Memproses pesanan selesai */
   selesaikanPesanan() {
-    mainkanSuara()
+    // Bersihkan seluruh timer agar tidak menembak saat layar Sukses/Struk
+    clearTimeout(this.timerIdle)
+    clearInterval(this.timerAlertIdle)
+    this.alertIdleAktif = false
+    this.perbaruiAlertIdle()
+
+    // Efek suara sukses (cash register) untuk splash Fase 6
+    mainkanSuaraCash()
+
     const angkaAcak = Math.floor(Math.random() * 900) + 100
     this.nomorAntrean = `PD-${String(angkaAcak)}`
     this.langkah = 'sukses'
@@ -273,9 +340,9 @@ class KioskApp {
     }, 2500)
   }
 
-  /** Memulai timer countdown struk (15 detik) */
+  /** Memulai timer countdown struk (10 detik) */
   mulaiTimerStruk() {
-    this.detikStruk = 15
+    this.detikStruk = 10
     clearInterval(this.timerStruk)
     this.timerStruk = setInterval(() => {
       this.detikStruk--
@@ -292,6 +359,9 @@ class KioskApp {
     clearTimeout(this.timerIdle)
     clearInterval(this.timerStruk)
     clearTimeout(this.timerQrisSukses)
+    clearInterval(this.timerAlertIdle)
+    this.alertIdleAktif = false
+    this.perbaruiAlertIdle()
     this.langkah = 'screensaver'
     this.keranjang = []
     this.kategoriAktif = 'promotion'
@@ -306,12 +376,33 @@ class KioskApp {
   /** Membekukan seluruh peristiwa klik dan keyboard */
   bindPeristiwa() {
     document.addEventListener('click', (e) => {
+      // Setiap sentuhan/klik layar mereset timer idle (AFK anti reset zonk)
+      this.resetWaktuIdle()
+
       const tombol = e.target.closest('[data-action]')
       if (!tombol) return
       this.tanganiAksi(tombol.dataset.action)
     })
 
     window.addEventListener('keydown', () => this.resetWaktuIdle())
+  }
+
+  /** Melewati timer struk: langsung ke Layar Preferensi (tanpa Screensaver) */
+  lewatiStruk() {
+    clearInterval(this.timerStruk)
+    clearTimeout(this.timerQrisSukses)
+    clearInterval(this.timerAlertIdle)
+    this.alertIdleAktif = false
+    this.perbaruiAlertIdle()
+
+    // Bersihkan memori belanjaan pelanggan sebelumnya
+    this.keranjang = []
+    this.kategoriAktif = 'promotion'
+    this.tampilKonfirmasiBatal = false
+    this.metodePembayaran = ''
+    this.statusQris = 'menunggu'
+
+    this.navigasiKe('preferensi')
   }
 
   /** Menangani aksi dari elemen yang diklik */
@@ -348,7 +439,7 @@ class KioskApp {
         this.tipePesanan = argumen
         mainkanSuara()
         this.render()
-        setTimeout(() => this.navigasiKe('menu'), 250)
+        setTimeout(() => this.navigasiKe('menu'), 300)
         break
 
       case 'setKategori':
@@ -406,6 +497,17 @@ class KioskApp {
         this.selesaikanPesanan()
         break
 
+      case 'lewatiStruk':
+        this.lewatiStruk()
+        break
+
+      case 'lanjutkanIdle':
+        this.lanjutkanIdle()
+        break
+
+      case 'hentiPenyebaran':
+        break
+
       default:
         break
     }
@@ -442,6 +544,9 @@ class KioskApp {
     this.renderQris()
     this.renderStruk()
     this.renderSukses()
+
+    // Jaga visibilitas modal alert idle tetap sinkron
+    this.perbaruiAlertIdle()
   }
 
   // ── HELPER: PEMBUATAN HTML ──────────────────────────────────────────

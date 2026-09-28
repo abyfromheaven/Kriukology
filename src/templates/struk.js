@@ -7,7 +7,7 @@
  */
 
 const templateStruk = `
-<div data-screen="struk" style="display:none" class="h-full p-5 bg-[#d51f32] grid-noise flex items-center">
+<div data-screen="struk" style="display:none" data-action="lewatiStruk" class="h-full p-5 bg-[#d51f32] grid-noise flex items-center cursor-pointer">
 
   <div class="ticket-edge bg-[#f7f1e8] w-full rounded-sm p-6 shadow-2xl">
 
@@ -43,7 +43,7 @@ const templateStruk = `
     <!-- Hitung Mundur Auto-Reset -->
     <p class="text-center text-[10px] text-stone-400">
       Kiosk kembali ke awal dalam
-      <span data-bind="detikStruk">15</span> detik
+      <span data-bind="detikStruk">10</span> detik
     </p>
 
   </div>

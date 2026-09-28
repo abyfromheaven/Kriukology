@@ -67,6 +67,11 @@ const kamus = {
     cancelConfirm: 'Reset seluruh pesanan ini?',
     yes: 'Ya',
     no: 'Batal',
+    idleTitle: 'MASIH PESAN?',
+    idleDesc: 'Layar akan otomatis kembali ke awal.',
+    idleUnit: 'DETIK',
+    idleNote: 'Pesananmu akan dihapus bila tidak ada tanggapan.',
+    idleConfirm: 'Ya, Saya Masih Pesan',
   },
 
   // ── Bahasa Inggris ────────────────────────────────────────────────────
@@ -120,6 +125,11 @@ const kamus = {
     cancelConfirm: 'Reset this entire order?',
     yes: 'Yes',
     no: 'Cancel',
+    idleTitle: 'STILL ORDERING?',
+    idleDesc: 'The screen will automatically reset.',
+    idleUnit: 'SECONDS',
+    idleNote: 'Your order will be cleared if there is no response.',
+    idleConfirm: "Yes, I'm Still Ordering",
   },
 }
 

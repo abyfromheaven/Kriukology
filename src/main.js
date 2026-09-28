@@ -22,6 +22,7 @@ import templatePembayaran from './templates/pembayaran.js'
 import templateLayarQris from './templates/layar-qris.js'
 import templateSukses from './templates/sukses.js'
 import templateStruk from './templates/struk.js'
+import templateModalAlertIdle from './templates/modal-alert-idle.js'
 
 // ── Import Komponen Kiosk ──────────────────────────────────────────────
 import KioskApp from './components/kiosk.js'
@@ -36,6 +37,7 @@ const gabunganTemplate = `
   ${templateLayarQris}
   ${templateSukses}
   ${templateStruk}
+  ${templateModalAlertIdle}
 `
 
 // ── Render Template ke DOM ─────────────────────────────────────────────
