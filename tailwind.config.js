@@ -4,7 +4,6 @@ export default {
     './index.html',
     './danu.html',
     './src/**/*.{js,css}',
-    './resources/views/**/*.blade.php',
   ],
   theme: {
     fontFamily: {

@@ -1,6 +1,6 @@
 # Kriukology — Self-Ordering Kiosk
 
-Prototype frontend interaktif untuk alur pemesanan mandiri restoran cepat saji. Dibuat dari PRD proyek menggunakan Vite, Tailwind CSS, Alpine.js, dan Animate.css.
+Prototype frontend interaktif untuk alur pemesanan mandiri restoran cepat saji. Dibuat dari PRD proyek menggunakan Vite, Tailwind CSS, JavaScript murni, dan Animate.css.
 
 ## Menjalankan project
 
@@ -23,4 +23,4 @@ npm run build
 - Simulasi QRIS, e-wallet, mobile banking, debit, dan tunai.
 - Splash sukses, nomor antrean, serta struk digital dengan reset otomatis.
 
-Data menu dan checkout masih bersifat lokal di browser agar demo bisa berjalan tanpa backend. Laravel, SQLite, admin POS, dan KDS dapat ditambahkan pada tahap berikutnya.
+Data menu dan checkout bersifat lokal di browser agar demo bisa berjalan tanpa backend. Project ini juga menyediakan backend Laravel + SQLite sebagai cadangan integrasi API kiosk pada tahap berikutnya.

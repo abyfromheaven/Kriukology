@@ -143,49 +143,6 @@ Berikut adalah visualisasi alur sistem dari awal hingga akhir transaksi:
     - _Logika Sistem:_ _Backend_ Laravel akan melakukan pengecekan data session/request. Jika keranjang kosong, sistem otomatis melakukan _redirect_ paksa kembali ke halaman `kiosk.menu` disertai pesan peringatan.
     
 ---
-### 2. POS Kasir
-#### 1. User Story
-
-- Sebagai: Manajemen Restoran / Kasir Utama Kriukology.
-- Saya ingin: Mengelola master data produk (menu paket, harga, stok, gambar) dan memantau pesanan yang masuk dari mesin kiosk secara _real-time_.
-- Agar: Operasional restoran berjalan lancar, menu di layar kiosk selalu diperbarui, dan pesanan pelanggan dapat diproses serta dipanggil sesuai nomor antrean.
-#### 2. Core Features (Fitur Utama Dashboard Admin)
-
-Untuk menghemat waktu pengerjaan, seluruh fitur ini diletakkan dalam satu halaman admin utama (`/admin`) yang dibagi menjadi 3 Tab Navigasi menggunakan Tailwind CSS (tanpa memisahkannya menjadi banyak halaman/file):
-
-#### Tab 1: Manajemen Produk (Product CRUD)
-
-Pusat pengelolaan menu ayam dan minuman yang tampil di Kiosk.
-
-- Lihat Menu (Read): Tabel rapi yang menampilkan Gambar Menu, Nama, Kategori, dan Harga.
-- Tambah Menu Baru (Create): Form input sederhana di dalam _pop-up modal_ untuk memasukkan Nama Menu, Harga, Kategori (`paket`, `alacarte`, `minuman`, `cemilan`), dan tombol _upload_ file gambar menu.
-- Hapus Menu (Delete): Tombol aksi cepat untuk menghapus menu yang sudah tidak dijual (stok kosong/tidak berlaku).
-
-#### Tab 2: Kitchen Display System (KDS Mockup - Order Tracker)
-
-Menampilkan pesanan yang masuk dari mesin Kiosk secara berurutan untuk pihak dapur/kasir.
-
-- Tabel Pesanan Masuk: Menampilkan Nomor Antrean, Tipe Order (Dine In/Take Away), Lokasi (Nomor Meja / Ambil di Kasir), Detail Item yang dibeli, dan Total Harga.
-- Aksi Status Bayar (Khusus Metode Cash): Tombol "Konfirmasi Pembayaran" untuk pesanan yang memilih metode _Cash di Kasir_. Begitu diklik, status berubah dari `pending` menjadi `paid`.
-- Tombol "Selesaikan Pesanan": Mengubah status pesanan dari `paid` menjadi `completed` jika makanan sudah diserahkan ke pelanggan, sehingga pesanan hilang dari daftar antrean aktif di dapur.
-
-#### Tab 3: Monitor Antrean Pelanggan (Queue Monitor Screen)
-
-Simulasi layar TV monitor lobi restoran untuk memanggil nomor antrean pelanggan.
-
-- Kolom "Sedang Diproses": Menampilkan daftar nomor antrean yang statusnya `paid` (sedang dimasak/disiapkan di dapur).
-- Kolom "Silakan Ambil": Menampilkan nomor antrean yang baru saja diselesaikan oleh kasir di Tab 2.
-- _Trik Sidang:_ Berikan satu tombol "Panggil Antrean" yang jika diklik akan memicu Sound "Ding-Dong" atau suara robot pembaca nomor antrean (memenuhi aspek nilai multimedia dari guru produktif).
-
----
-
-#### 3. Logic & Edge Cases (Aturan Main & Validasi Admin)
-
-- Logic Sinkronisasi Data: Setiap kali admin menghapus produk atau menambahkan produk baru di Tab 1, data di database SQLite akan langsung berubah, dan layar Kiosk pelanggan di depan otomatis menampilkan perubahan tersebut saat diakses/di-refresh.
-- Edge Case: Penanganan File Gambar Produk:
-    
-    - _Kondisi:_ Admin mengunggah menu ayam baru tetapi lupa memasukkan file gambar.
-    - _Logika Sistem:_ Backend Laravel akan memberikan validasi `required|image` pada form. Jika kosong, sistem menampilkan pesan error merah, atau secara otomatis memasang gambar _placeholder_ bawaan bernama `default-chicken.png` agar tampilan Kiosk pelanggan tidak pecah/rusak.
 ---
 # 4. Data Models & Database Schema (Struktur Data)
 ## 1. Database Models (Entity Relationship)
@@ -230,7 +187,7 @@ Mencatat data utama dari pesanan yang dibuat oleh pelanggan di mesin _kiosk_.
 - `order_type` (TEXT) — Pilihan tipe makan (`dine_in`, `take_away`).
 - `table_number` (TEXT, Nullable) — Nomor meja jika memilih opsi antar ke meja.
 - `payment_method` (TEXT) — Metode pembayaran (`QRIS`, `DEBIT`, `CASH`).
-- `status` (TEXT) — Status pelacakan untuk KDS (`pending`, `paid`, `completed`).
+- `status` (TEXT) — Status pesanan (`pending`, `paid`, `completed`).
 - `timestamps` (`created_at` dan `updated_at`)
 
 ## C. Tabel: `order_details` (Detail Transaksi / Item Paket - _One-to-Many_)
@@ -255,8 +212,8 @@ kriukology-kiosk/
 ├── app/
 │   ├── Http/
 │   │   └── Controllers/
-│   │       ├── KioskController.php      # Mengontrol logika alur Client Kiosk (Fase 1-8)
-│   │       └── AdminController.php      # Mengontrol logika POS CRUD & KDS (Tab 1-3)
+│   │       ├── Kiosk/MenuController.php   # Mengontrol logika API menu Kiosk
+│   │       └── Kiosk/OrderController.php  # Mengontrol logika API checkout Kiosk
 │   └── Models/
 │       ├── Product.php                  # Model data menu
 │       ├── Order.php                    # Model transaksi utama
@@ -274,13 +231,9 @@ kriukology-kiosk/
 │   ├── css/
 │   │   └── app.css                      # Entrypoint directive Tailwind CSS
 │   └── views/
-│       ├── layouts/
-│       │   └── app.blade.php            # Master Layout (Simulasi Layar Kiosk Vertikal & Audio API)
-│       ├── kiosk/
-│       │   ├── index.blade.php          # SPA Kiosk View (Fase 1 hingga Fase 8 via Alpine.js)
-│       │   └── receipt_pdf.blade.php    # (Opsional) Layout struk jika ingin window.print()
-│       └── admin/
-│           └── dashboard.blade.php      # Tampilan Dashboard Admin 3 Tab (CRUD, KDS, Monitor)
+│       └── kiosk/
+│           ├── index.blade.php          # SPA Kiosk View (Fase 1 hingga Fase 8 via Alpine.js)
+│           └── receipt_pdf.blade.php    # (Opsional) Layout struk jika ingin window.print()
 └── routes/
     └── web.php                          # Endpoints / Routing Web
 ```
@@ -295,20 +248,12 @@ Seluruh _routing_ menggunakan metode _Named Routes_ bawaan Laravel untuk memperm
 
 |HTTP Method|URI|Named Route|Controller Action|Keterangan / Output|
 |---|---|---|---|---|
-|GET|`/`|`kiosk.index`|`KioskController@index`|Menampilkan antarmuka utama kios (Lockscreen hingga Checkout SPA).|
-|POST|`/checkout`|`kiosk.checkout`|`KioskController@checkout`|Server Action: Menerima payload data keranjang belanja JSON dari Alpine.js, melakukan validasi total harga, mengenerate nomor antrean, menyimpan ke database SQLite, lalu mengembalikan data ke halaman sukses (_Redirect with Sessions_).|
-
-## B. Routing Sisi Admin Dashboard POS & KDS (`routes/web.php`)
-
-|HTTP Method|URI|Named Route|Controller Action|Keterangan / Output|
-|---|---|---|---|---|
-|GET|`/admin`|`admin.dashboard`|`AdminController@index`|Menampilkan satu halaman Dashboard Utama berisi Tab CRUD, KDS, dan Monitor Antrean.|
-|POST|`/admin/products`|`admin.products.store`|`AdminController@storeProduct`|Server Action: Memproses input form penambahan menu baru beserta proses _upload_ gambar ke folder publik.|
-|DELETE|`/admin/products/{id}`|`admin.products.destroy`|`AdminController@deleteProduct`|Server Action: Menghapus menu produk secara permanen dari database SQLite berdasarkan ID.|
-|PATCH|`/admin/orders/{id}/pay`|`admin.orders.pay`|`AdminController@confirmPayment`|Server Action: Khusus metode _Cash_, mengubah kolom `status` pesanan dari `pending` menjadi `paid`.|
-|PATCH|`/admin/orders/{id}/complete`|`admin.orders.complete`|`AdminController@completeOrder`|Server Action: Mengubah status transaksi menjadi `completed` jika makanan sudah diambil pelanggan.|
+|GET|`/`|`kiosk.home`|Serve `index.html` langsung|Menampilkan antarmuka utama (Lockscreen hingga Checkout SPA) tanpa Blade.|
+|GET|`/api/menu`|—|`Kiosk\MenuController@index`|Mengembalikan JSON daftar menu dari database SQLite.|
+|POST|`/api/checkout`|—|`Kiosk\OrderController@checkout`|Server Action: Menerima payload keranjang belanja JSON, melakukan validasi total harga, mengenerate nomor antrean, menyimpan transaksi ke database SQLite, lalu mengembalikan data (termasuk nomor antrean) ke klien.|
 
 ---
+
 # 5. Functional Requirements & Feature Breakdown
 ## Modul 1: Client-Side Kiosk Application (SPA via Alpine.js)
 
@@ -429,39 +374,6 @@ Seluruh _routing_ menggunakan metode _Named Routes_ bawaan Laravel untuk memperm
 
 ---
 
-## Modul 2: Back-Office Merchant Dashboard & KDS (Admin-Side)
-
-## Modul 2: Admin Dashboard One-Page (3-Tab Layout)
-
-- User Story: "Sebagai pengelola merchant Kriukology, saya ingin mengelola katalog makanan, memantau pesanan masuk untuk dapur, serta memperbarui antrean di satu halaman terpusat yang praktis."
-- UI/UX Component Requirements:
-    
-    - Bilah navigasi atas (_Header Admin_) menampilkan nama brand Kriukology - Back Office Control.
-    - Bilah navigasi tab horizontal menggunakan utilitas Tailwind CSS untuk berpindah antar-tiga tampilan utama: [Tab 1: Manajemen Produk], [Tab 2: Kitchen Display System (KDS)], dan [Tab 3: Monitor Antrean Lobi].
-    
-
-## Spesifikasi Tab 1: Manajemen Produk (Product CRUD)
-
-- Komponen Visual: Tabel data (Kolom: Foto, Nama Menu, Kategori, Harga, Aksi). Tombol _"Tambah Produk Baru"_ di atas tabel yang memicu munculnya jendela formulir modal.
-- Logika Sistem: Menggunakan fungsi standar Laravel CRUD Controller. Form wajib memiliki validasi backend (`name` required, `price` numeric, `image` image mimes jpeg,png). Tersedia tombol aksi _"Hapus"_ berbasis metode HTTP `DELETE` dengan konfirmasi alert.
-- Acceptance Criteria: Produk yang ditambahkan atau dihapus oleh admin di halaman ini langsung mengubah isi database SQLite dan merubah tampilan pilihan menu di sisi Kiosk secara _real-time_ saat diakses kembali.
-
-## Spesifikasi Tab 2: Kitchen Display System (KDS - Order Tracker)
-
-- Komponen Visual: Grid kartu pesanan masuk yang diurutkan berdasarkan waktu (Pesanan terlama di posisi paling atas kiri). Setiap kartu pesanan memuat: Nomor Antrean besar, Tipe Makan, Detail Komponen Paket yang dibeli (baca data JSON), Status Meja/Ambil Kasir, dan Tombol Aksi Konstatus.
-- Logika Sistem:
-    
-    - Jika pesanan masuk memilih metode Tunai, tampilkan tombol kuning _"Konfirmasi Bayar di Kasir"_. Jika diklik, jalankan server action `PATCH` untuk merubah nilai database `status = 'paid'`.
-    - Jika pesanan sudah berstatus lunas (`paid`), tampilkan tombol hijau _"Selesaikan Masakan & Serahkan"_. Jika diklik, jalankan server action `PATCH` untuk merubah database `status = 'completed'`. Pesanan yang selesai otomatis hilang dari daftar pengerjaan aktif dapur.
-    
-- Acceptance Criteria: Dapur dapat melacak dengan detail modifikasi varian menu paket yang dipilih pelanggan dan merubah status urutan proses masak secara valid.
-
-## Spesifikasi Tab 3: Monitor Antrean Pelanggan (Lobi Restoran)
-
-- Komponen Visual: Tampilan layar lobi yang dibagi menjadi dua kolom vertikal besar. Kolom Kiri: "SEDANG DIPROSES" (menampilkan daftar nomor antrean berstatus `paid`). Kolom Kanan: "SILAKAN AMBIL" (menampilkan daftar nomor antrean berstatus `completed`). Di bagian bawah terdapat tombol besar _"PANGGIL NOMOR ANTREAN TERAKHIR"_.
-- Logika Sistem: Mengambil data relasional dari tabel pesanan harian. Ketika tombol panggilan antrean diklik oleh admin, panggil fungsi pemutar efek suara audio multimedia `dingdong.mp3`.
-- Acceptance Criteria: Tampilan monitor antrean sinkron dengan perpindahan status pengerjaan yang dilakukan oleh staf dapur di Tab 2.
----
 # 6. Non-Functional Requirements & System Policies
 
 ## 1. Performance (Batasan & Standar Kecepatan)
@@ -473,14 +385,12 @@ Seluruh _routing_ menggunakan metode _Named Routes_ bawaan Laravel untuk memperm
 ## 2. Security (Penanganan Data Sensitif & Integritas)
 
 - Database Portability & Serverless Isolation: Menggunakan database lokal SQLite yang diisolasi di dalam folder proyek privat. Koneksi database dikunci secara aman menggunakan _environment variables_ di dalam file `.env`. Jalur file `.sqlite` dilarang keras ditulis secara _hardcoded_ di dalam kode program.
-- Form & Transaction Protection: Setiap transaksi pengiriman data keranjang belanja dan formulir CRUD Admin wajib dibungkus oleh directive `@csrf` bawaan Laravel untuk mencegah serangan _Cross-Site Request Forgery_.
+- Form & Transaction Protection: Setiap transaksi pengiriman data keranjang belanja dan formulir input wajib dibungkus oleh directive `@csrf` bawaan Laravel untuk mencegah serangan _Cross-Site Request Forgery_.
 - Server-Side Price Validation: Sistem dilarang mempercayai kalkulasi total harga yang dikirim oleh sisi klien (karena rawan manipulasi _inspect element_). Backend Laravel wajib melakukan perhitungan ulang total belanjaan dengan mencocokkan ID produk ke database SQLite internal sebelum transaksi disimpan ke dalam tabel transaksi.
 
 ## 3. Error Handling Policy (Kebijakan Penanganan Eror)
 
 - User-Friendly Client Fallback: Jika pengguna menembak URL halaman pembayaran (`/checkout`) secara langsung dalam kondisi keranjang belanja kosong, backend Laravel harus menangkap kondisi tersebut dan melakukan _redirect_ paksa ke halaman menu utama disertai _Flash Session Alert_ berwarna merah di atas layar.
-- Dynamic Asset Placeholder: Jika pada Dashboard Admin (`/admin`) petugas mengunggah menu makanan baru tetapi gagal mengunggah gambar atau file gambar rusak, sistem _backend_ tidak boleh merusak layout halaman depan. Sistem wajib secara otomatis menampilkan gambar cadangan bawaan (_fallback placeholder image_) bernama `default-chicken.png`.
-- Validation Fail Capture: Semua kegagalan input pada form penambahan produk admin harus ditangkap menggunakan objek `$errors` bawaan Laravel. Eror wajib ditampilkan secara spesifik di bawah masing-masing kolom input dengan teks instruksi yang jelas (Contoh: _"Harga harus berupa angka!"_), bukan memunculkan halaman eror bawaan PHP (_Whoops/Stack Trace_) yang membingungkan penguji.
 ---
 # 7. AI Development Instructions & Clean Code Standards
 
