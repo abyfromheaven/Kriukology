@@ -10,7 +10,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        danu: resolve(__dirname, 'danu.html')
+        danu: resolve(__dirname, 'danu.html'),
+        cms: resolve(__dirname, 'cms.html')
       }
     }
   }

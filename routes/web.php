@@ -9,6 +9,11 @@ Route::get('/', function () {
     return file_get_contents(base_path('index.html'));
 })->name('kiosk.home');
 
+// ── CMS Kelola Produk ──────────────────────────────────────────────────
+Route::get('/cms', function () {
+    return file_get_contents(base_path('cms.html'));
+})->name('cms.products');
+
 // API Kiosk
 Route::prefix('api')->group(function () {
     Route::get('/menu', [MenuController::class, 'index']);
