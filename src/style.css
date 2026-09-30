@@ -91,8 +91,9 @@ html, body, button, input, select, textarea, code, pre {
   background: radial-gradient(circle at 30% 26%, #ffd66e 0 13%, #ffab27 14% 42%, #d92a29 43% 65%, #8b2020 66%);
 }
 
+/* Thumbnail keranjang: netral, isinya foto produk dari CMS (bukan orb oranye) */
 .mini-food {
-  background: radial-gradient(circle at 35% 28%, #ffe28d, #ee8d25 42%, #b92a28 70%);
+  background: #f4f4f5;
 }
 
 /* ── Grid Noise Overlay ─────────────────────────────────────────────── */
@@ -180,6 +181,73 @@ button:focus-visible { outline: 3px solid #f5bd27; outline-offset: 3px; }
   background: #fafafa !important;
   box-shadow: 0 4px 24px rgba(0,0,0,0.12) !important;
   transform: scale(1.01);
+}
+
+/* Kartu produk reveal: opacity 0 → 1, transform hanya di-animate supaya
+   transisi hover (scale gambar, shadow) tidak ketimpa. */
+.reveal-card {
+  opacity: 0;
+  animation-name: reveal-card-in;
+  animation-duration: .42s;
+  animation-timing-function: cubic-bezier(.22, .68, .36, 1);
+  animation-fill-mode: forwards;
+}
+
+@keyframes reveal-card-in {
+  from { opacity: 0; transform: translateY(14px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Varian tanpa animasi — dipakai saat kartu di-render ulang di layar yang
+   sama (mis. ubah jumlah di keranjang) supaya tidak berkedip. */
+.reveal-card-off {
+  opacity: 1;
+  animation: none;
+}
+
+/* Delay bertingkat per posisi card (maks 12 tingkat agar tidak terlalu lama) */
+.stagger-1  { animation-delay: .00s; }
+.stagger-2  { animation-delay: .04s; }
+.stagger-3  { animation-delay: .08s; }
+.stagger-4  { animation-delay: .12s; }
+.stagger-5  { animation-delay: .16s; }
+.stagger-6  { animation-delay: .20s; }
+.stagger-7  { animation-delay: .24s; }
+.stagger-8  { animation-delay: .28s; }
+.stagger-9  { animation-delay: .32s; }
+.stagger-10 { animation-delay: .36s; }
+.stagger-11 { animation-delay: .40s; }
+.stagger-12 { animation-delay: .44s; }
+
+/* ── Tab Kategori: aktif = merah + sedikit membesar (tanpa garis merah) ── */
+.kategori-tab {
+  transition: background-color .2s ease, transform .2s ease;
+  transform: scale(1);
+}
+
+.kategori-tab.is-aktif {
+  background-color: rgba(213, 31, 50, .07);
+  transform: scale(1.06);
+}
+
+.kategori-tab.is-aktif .leading-tight {
+  transform: scale(1.06);
+}
+
+/* ── Notifikasi Bubble (pengganti alert browser) ───────────────────── */
+/* Muncul dari atas, hilang sendiri setelah ~3.2 detik (diatur di JS) */
+.buble-masuk {
+  animation: buble-masuk .3s cubic-bezier(.22, .68, .36, 1) both;
+}
+
+@keyframes buble-masuk {
+  from { opacity: 0; transform: translateY(-16px) scale(.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Modal Konfirmasi Metode Pembayaran ────────────────────────────── */
+.konfirmasi-bayar-modal {
+  animation: pref-scale-in .26s ease-out both;
 }
 
 /* ── Preference Page: Entrance Animations ──────────────────────────── */

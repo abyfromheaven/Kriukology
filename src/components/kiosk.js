@@ -31,6 +31,7 @@ class KioskApp {
   constructor() {
     // ── State Aplikasi ─────────────────────────────────────────────────
     this.langkah = 'screensaver'
+    this.langkahTerakhir = null
     this.bahasa = 'id'
     this.tipePesanan = ''
     this.kategoriAktif = null
@@ -38,7 +39,9 @@ class KioskApp {
     this.daftarMenu = []
     this.keranjang = []
     this.tampilKonfirmasiBatal = false
+    this.tampilKonfirmasiBayar = ''
     this.metodePembayaran = ''
+    this.timerBuble = null
     this.nomorAntrean = 'PD-001'
     this.timerIdle = null
     this.timerStruk = null
@@ -357,6 +360,35 @@ class KioskApp {
     this.render()
   }
 
+  /** Menutup modal konfirmasi metode pembayaran */
+  tutupKonfirmasiBayar() {
+    this.tampilKonfirmasiBayar = ''
+    this.render()
+  }
+
+  /**
+   * Notifikasi bubble di atas layar — muncul sebentar lalu hilang sendiri.
+   * Dipakai untuk metode yang tidak bisa dipilih (mis. debit maintenance).
+   */
+  tampilkanBuble(pesan, durasiMs = 3200) {
+    const buble = document.querySelector('[data-bind="bubleNotif"]')
+    const teks = document.querySelector('[data-bind="bubleNotifTeks"]')
+    if (!buble || !teks) return
+
+    clearTimeout(this.timerBuble)
+    teks.textContent = pesan
+    buble.style.display = ''
+    // Restart animasi supaya bubble berikutnya tidak langsung selesai
+    const kartu = buble.querySelector('.buble-notif')
+    kartu.classList.remove('buble-masuk')
+    void buble.offsetWidth
+    kartu.classList.add('buble-masuk')
+
+    this.timerBuble = setTimeout(() => {
+      buble.style.display = 'none'
+    }, durasiMs)
+  }
+
   /** Memproses pesanan selesai dan mengirim checkout ke API backend */
   async selesaikanPesanan() {
     // Bersihkan seluruh timer agar tidak menembak saat layar Sukses/Struk
@@ -433,12 +465,14 @@ class KioskApp {
     clearInterval(this.timerStruk)
     clearTimeout(this.timerQrisSukses)
     clearInterval(this.timerAlertIdle)
+    clearTimeout(this.timerBuble)
     this.alertIdleAktif = false
     this.perbaruiAlertIdle()
     this.langkah = 'screensaver'
     this.keranjang = []
     this.kategoriAktif = this.daftarKategori[0]?.id ?? null
     this.tampilKonfirmasiBatal = false
+    this.tampilKonfirmasiBayar = ''
     this.metodePembayaran = ''
     this.statusQris = 'menunggu'
     this.render()
@@ -472,6 +506,7 @@ class KioskApp {
     this.keranjang = []
     this.kategoriAktif = this.daftarKategori[0]?.id ?? null
     this.tampilKonfirmasiBatal = false
+    this.tampilKonfirmasiBayar = ''
     this.metodePembayaran = ''
     this.statusQris = 'menunggu'
 
@@ -554,10 +589,30 @@ class KioskApp {
         break
       }
 
-      case 'setMetodePembayaran':
-        this.metodePembayaran = argumen
+      case 'setMetodePembayaran': {
+        // Metode maintenance tidak bisa dipilih — hanya memunculkan bubble
+        const metode = daftarMetodePembayaran.find(m => m.id === argumen)
+        if (metode?.maintenance) {
+          this.tampilkanBuble('Mohon maaf, metode pembayaran ini sedang dalam masa maintenance')
+          return
+        }
+        // Konfirmasi dulu sebelum lanjut, biar tidak salah pilih
+        this.tampilKonfirmasiBayar = argumen
+        this.render()
+        return
+      }
+
+      case 'batalKonfirmasiBayar':
+        this.tutupKonfirmasiBayar()
+        break
+
+      case 'konfirmasiBayarLanjut': {
+        const metode = this.tampilKonfirmasiBayar
+        this.tutupKonfirmasiBayar()
+        if (!metode) break
+        this.metodePembayaran = metode
         mainkanSuara()
-        if (argumen === 'qris') {
+        if (metode === 'qris') {
           this.statusQris = 'menunggu'
           this.navigasiKe('qris')
         } else {
@@ -565,6 +620,7 @@ class KioskApp {
           setTimeout(() => this.selesaikanPesanan(), 300)
         }
         break
+      }
 
       case 'selesaikanPesanan':
         this.selesaikanPesanan()
@@ -627,15 +683,15 @@ class KioskApp {
   /** Membuat HTML tombol kategori */
   buatHTMLKategori(kategori) {
     const aktif = this.kategoriAktif === kategori.id
+    // Kategori aktif: warna merah + sedikit membesar (tanpa garis merah samping)
     const kelasTeks = aktif
       ? 'text-[#d51f32] font-black'
       : 'text-[#231f20] font-semibold opacity-85 hover:opacity-100'
-    const bgAktif = aktif ? 'bg-red-50/80 border-l-4 border-[#d51f32]' : 'hover:bg-stone-50'
     return `
-      <button data-action="setKategori:${kategori.id}"
-        class="w-full px-2 py-2 flex items-center gap-2.5 text-left transition rounded-lg ${bgAktif}">
+      <button data-action="setKategori:${kategori.id}" aria-current="${aktif ? 'true' : 'false'}"
+        class="kategori-tab w-full px-2 py-2 flex items-center gap-2.5 text-left rounded-lg ${aktif ? 'is-aktif' : 'hover:bg-stone-50'}">
         <i class="${kategori.icon} text-[#d51f32] text-base shrink-0 w-5 text-center"></i>
-        <span class="text-[11px] leading-tight ${kelasTeks}">${kategori.label[this.bahasa]}</span>
+        <span class="text-[11px] leading-tight transition-transform ${kelasTeks}">${kategori.label[this.bahasa]}</span>
       </button>`
   }
 
@@ -681,7 +737,7 @@ class KioskApp {
     const srcGambar = item.gambar || '/assets/menu-placeholder.svg'
 
     return `
-      <article class="rounded-2xl bg-white overflow-hidden border border-stone-100 shadow-[0_4px_16px_rgba(42,36,36,0.06)] flex flex-col justify-between transition-all duration-200 hover:shadow-md ${habis ? 'opacity-60 grayscale' : ''}">
+      <article class="reveal-card rounded-2xl bg-white overflow-hidden border border-stone-100 shadow-[0_4px_16px_rgba(42,36,36,0.06)] flex flex-col justify-between transition-all duration-200 hover:shadow-md ${habis ? 'opacity-60 grayscale' : ''}">
         <div class="aspect-square relative overflow-hidden bg-white rounded-t-2xl shrink-0">
           <img src="${srcGambar}" alt="${item.nama}" class="w-full h-full object-contain transition-transform duration-300 hover:scale-105" loading="lazy" />
           ${overlayHabis}
@@ -712,11 +768,12 @@ class KioskApp {
     const barisDetail = detail
       ? `<p class="text-[10px] leading-tight text-stone-500 mt-1">${detail}</p>`
       : ''
+    const srcGambar = baris.gambar || '/assets/menu-placeholder.svg'
+
     return `
-      <article class="flex items-center gap-3 min-h-[104px] rounded-[30px] bg-white px-3 py-3 shadow-[0_8px_22px_rgba(42,36,36,0.18)]">
+      <article class="reveal-card flex items-center gap-3 min-h-[104px] rounded-[30px] bg-white px-3 py-3 shadow-[0_8px_22px_rgba(42,36,36,0.18)]">
         <div class="mini-food relative h-[72px] w-[78px] shrink-0 overflow-hidden rounded-2xl flex items-center justify-center">
-          <img src="/assets/menu-placeholder.svg" alt="" class="absolute inset-0 h-full w-full object-cover opacity-80">
-          <span class="relative text-3xl drop-shadow">${baris.emoji || '🍗'}</span>
+          <img src="${srcGambar}" alt="" class="absolute inset-0 h-full w-full object-contain">
         </div>
         <div class="min-w-0 flex-1 self-stretch flex flex-col justify-between py-0.5">
           <div class="flex items-start justify-between gap-2">
@@ -744,20 +801,34 @@ class KioskApp {
   /** Membuat HTML 3 metode pembayaran */
   buatHTMLMetodePembayaran(metode) {
     const aktif = this.metodePembayaran === metode.id
-    const kelasAktif = aktif
-      ? 'bg-red-50/70 text-[#d51f32] shadow-[0_10px_24px_rgba(213,31,50,0.16)] ring-2 ring-[#d51f32]/30 scale-[1.03]'
-      : 'bg-white text-[#231f20] hover:bg-stone-50 shadow-[0_6px_18px_rgba(42,36,36,0.07)] hover:shadow-[0_10px_24px_rgba(42,36,36,0.10)]'
+    // Metode maintenance (debit): tampil redup + label, tidak bisa dipilih
+    const maintenance = Boolean(metode.maintenance)
+
+    // Metode maintenance: gelap/redup seperti produk habis, tanpa abu-abu
+    const kelasKartu = maintenance
+      ? 'opacity-60 cursor-not-allowed shadow-[0_6px_18px_rgba(42,36,36,0.07)]'
+      : aktif
+        ? 'bg-red-50/70 text-[#d51f32] shadow-[0_10px_24px_rgba(213,31,50,0.16)] ring-2 ring-[#d51f32]/30 scale-[1.03] cursor-pointer'
+        : 'bg-white text-[#231f20] hover:bg-stone-50 shadow-[0_6px_18px_rgba(42,36,36,0.07)] hover:shadow-[0_10px_24px_rgba(42,36,36,0.10)] cursor-pointer'
 
     const gambar = `/assets/${metode.id}.png`
 
+    // Label maintenance melayang di tengah kartu, sama seperti label stok habis
+    const labelMaintenance = maintenance
+      ? `<div class="absolute inset-0 bg-black/55 flex items-center justify-center z-10">
+           <span class="text-white font-black text-[10px] tracking-wider uppercase px-2 py-0.5 bg-black/50 rounded">Maintenance</span>
+         </div>`
+      : ''
+
     return `
-      <button data-action="setMetodePembayaran:${metode.id}"
-        class="rounded-2xl px-2 py-4 sm:py-5 flex flex-col items-center gap-3 text-center transition-all duration-200 cursor-pointer ${kelasAktif}">
+      <button data-action="setMetodePembayaran:${metode.id}"${maintenance ? ' aria-disabled="true"' : ''}
+        class="relative rounded-2xl px-2 py-4 sm:py-5 flex flex-col items-center gap-3 text-center transition-all duration-200 ${kelasKartu}">
         <span class="h-24 sm:h-28 w-full flex items-center justify-center">
           <img src="${gambar}" alt="${metode.label}" loading="lazy"
             class="max-h-full max-w-full object-contain drop-shadow-sm" />
         </span>
         <span class="text-base sm:text-lg font-extrabold tracking-wide">${metode.label}</span>
+        ${labelMaintenance}
       </button>`
   }
 
@@ -830,7 +901,9 @@ class KioskApp {
     const wadahMenu = el.querySelector('[data-list="menuTampil"]')
     if (wadahMenu) {
       const itemMenu = this.dapatkanMenuTampil()
-      wadahMenu.innerHTML = itemMenu.map(item => this.buatHTMLItemMenu(item)).join('')
+      wadahMenu.innerHTML = itemMenu.map((item, i) =>
+        this.buatHTMLItemMenu(item).replace('reveal-card', `reveal-card stagger-${(i % 12) + 1}`)
+      ).join('')
     }
 
     const statusEl = el.querySelector('[data-bind="statusPesanan"]')
@@ -863,10 +936,20 @@ class KioskApp {
     const el = document.querySelector('[data-screen="keranjang"]')
     if (!el) return
 
+    // Reveal hanya diputar saat layar baru dibuka. Kalau tidak, tiap ubah
+    // jumlah akan memicu animasi dari awal dan card berkedip.
+    const baruMuncul = this.langkah === 'keranjang' && this.langkahTerakhir !== 'keranjang'
+    this.langkahTerakhir = this.langkah
+
     const wadahItem = el.querySelector('[data-list="keranjangItems"]')
     if (wadahItem) {
       wadahItem.innerHTML = this.keranjang
-        .map((baris, indeks) => this.buatHTMLItemKeranjang(baris, indeks))
+        .map((baris, indeks) => {
+          const html = this.buatHTMLItemKeranjang(baris, indeks)
+          return baruMuncul
+            ? html.replace('reveal-card', `reveal-card stagger-${(indeks % 10) + 1}`)
+            : html.replace('reveal-card', 'reveal-card-off')
+        })
         .join('')
     }
 
@@ -889,6 +972,18 @@ class KioskApp {
       wadahMetode.innerHTML = daftarMetodePembayaran
         .map(metode => this.buatHTMLMetodePembayaran(metode))
         .join('')
+    }
+
+    // Modal konfirmasi metode pembayaran
+    const modalEl = el.querySelector('[data-bind="konfirmasiBayar"]')
+    if (modalEl) modalEl.style.display = this.tampilKonfirmasiBayar ? '' : 'none'
+
+    const modalTeks = el.querySelector('[data-bind="konfirmasiBayarTeks"]')
+    if (modalTeks) {
+      const nama = daftarMetodePembayaran.find(m => m.id === this.tampilKonfirmasiBayar)?.label
+      modalTeks.textContent = nama
+        ? `Apakah yakin anda akan menggunakan metode pembayaran ${nama}?`
+        : ''
     }
   }
 

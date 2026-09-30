@@ -93,6 +93,7 @@ const templateLayarMenu = `
       <div class="flex-1 overflow-y-auto scroll-clean px-3 pb-36">
         <div class="grid grid-cols-2 gap-3" data-list="menuTampil"></div>
       </div>
+
     </div>
 
   </div>

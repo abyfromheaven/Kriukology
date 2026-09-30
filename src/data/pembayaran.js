@@ -29,6 +29,7 @@ const daftarPembayaran = [
     id: 'debit',
     label: 'Debit',
     icon: 'fa-solid fa-credit-card',
+    maintenance: true,
   },
 ]
 
