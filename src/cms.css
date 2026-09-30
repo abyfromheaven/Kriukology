@@ -34,6 +34,11 @@ button { cursor: pointer; }
 .brand-logo { width: 120px; height: 54px; object-fit: contain; }
 .brand-banner { width: 210px; height: 58px; object-fit: contain; }
 .cms-frame h1 { margin: 8px 0 18px; text-align: center; font-size: clamp(28px, 3.2vw, 38px); font-weight: 450; line-height: 1.15; }
+.cms-heading { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; margin: 8px 0 18px; }
+.cms-heading h1 { margin: 0; }
+.manage-category-button { height: 40px; display: flex; align-items: center; gap: 9px; padding: 0 16px; border: 2px solid #242424; border-radius: 10px; background: #fff; color: #242424; font-size: 16px; }
+.manage-category-button:hover { background: #f4f4f4; }
+.manage-category-button i { font-size: 15px; }
 .cms-controls { display: grid; grid-template-columns: minmax(200px, 1fr) 190px 185px; gap: 12px; margin: 0 2px 20px; }
 .search-box, .category-filter { height: 44px; border: 2px solid #242424; border-radius: 11px; display: flex; align-items: center; }
 .search-box { padding: 0 12px; gap: 10px; color: #9299a3; }
@@ -73,6 +78,7 @@ button { cursor: pointer; }
 .category-field { width: 100%; margin-bottom: 12px; text-align: center; }
 .category-field input { width: auto; max-width: 100%; border: 0; outline: 0; background: transparent; padding: 0 24px 0 4px; text-align: center; font-size: 28px; color: #252525; }
 .category-field input::placeholder { color: #888; opacity: 1; }
+.category-field select { width: auto; max-width: 100%; border: 0; outline: 0; background: transparent; padding: 0 24px 0 4px; text-align: center; font-size: 28px; color: #252525; appearance: none; cursor: pointer; }
 .category-field > i { position: absolute; top: 13px; margin-left: -20px; font-size: 13px; pointer-events: none; }
 .category-field select.is-placeholder { color: #888; }
 .name-field { display: flex; align-items: flex-start; justify-content: center; margin-bottom: 28px; }
@@ -106,6 +112,20 @@ button { cursor: pointer; }
 .stock-error { position: static; }
 .stock-error.visible { display: block; animation: shake .42s both; }
 @keyframes shake { 0%, 100% { transform: translateX(0); } 15%, 45%, 75% { transform: translateX(-7px); } 30%, 60%, 90% { transform: translateX(7px); } }
+
+/* ── Panel Kelola Kategori ─────────────────────────────────────────── */
+.panel-title { margin: 26px 0 4px; text-align: center; font-size: 30px; font-weight: 500; }
+.panel-hint { margin: 0 0 22px; text-align: center; color: #6b6b6b; font-size: 14px; line-height: 1.45; }
+.cat-field { margin-bottom: 16px; }
+.cat-field > label { display: block; margin-bottom: 7px; color: #5a5a5a; font-size: 14px; }
+.cat-field input, .cat-field select { width: 100%; height: 46px; padding: 0 13px; border: 2px solid #242424; border-radius: 10px; background: #fff; color: #242424; font-size: 17px; outline: 0; }
+.cat-field select { cursor: pointer; }
+.cat-field input:focus, .cat-field select:focus { border-color: #e92f33; }
+.cat-field .field-error { position: static; display: block; margin-top: 5px; text-align: left; }
+.cat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.cat-icon-preview { position: absolute; top: 42px; right: 15px; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: #f2f2f2; color: #e92f33; font-size: 16px; pointer-events: none; }
+.cat-usage { margin: 4px 0 14px; text-align: center; color: #6b6b6b; font-size: 14px; line-height: 1.45; }
+.cat-error-banner { margin: 0 0 16px; padding: 11px 14px; border: 2px solid #e92f33; border-radius: 10px; background: #fff3f3; color: #c01f24; font-size: 14px; line-height: 1.45; text-align: left; }
 
 .confirm-backdrop { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 18px; background: #0003; }
 .confirm-modal { width: min(640px, 100%); min-height: 235px; padding: 32px 46px 40px; border: 3px solid #272727; border-radius: 30px; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }

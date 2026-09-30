@@ -10,8 +10,6 @@
  * ==========================================================================
  */
 
-import daftarMenu from '../data/menu.js'
-import daftarKategori from '../data/kategori.js'
 import daftarMetodePembayaran from '../data/pembayaran.js'
 import kamus from '../data/kamus.js'
 import formatRupiah from '../utils/format.js'
@@ -35,7 +33,9 @@ class KioskApp {
     this.langkah = 'screensaver'
     this.bahasa = 'id'
     this.tipePesanan = ''
-    this.kategoriAktif = 'chicken'
+    this.kategoriAktif = null
+    this.daftarKategori = []
+    this.daftarMenu = []
     this.keranjang = []
     this.tampilKonfirmasiBatal = false
     this.metodePembayaran = ''
@@ -56,10 +56,49 @@ class KioskApp {
     this.qrInstance = null
     this.urlQrisTerakhir = ''
 
+    this.muatMenuFromAPI()
     this.inisialisasiListenerPembayaran()
     this.resetWaktuIdle()
     this.bindPeristiwa()
     this.render()
+  }
+
+  /** Memuat kategori + menu terkini dari API backend Laravel */
+  async muatMenuFromAPI() {
+    try {
+      const response = await fetch('/api/menu')
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const data = await response.json()
+
+      this.daftarKategori = (data.categories || []).map(kat => ({
+        id: kat.id,
+        slug: kat.slug,
+        icon: kat.icon || 'fa-solid fa-utensils',
+        emoji: kat.emoji || '🍗',
+        label: { id: kat.label_id, en: kat.label_en }
+      }))
+
+      this.daftarMenu = (data.products || []).map(item => ({
+        id: item.id,
+        nama: item.name,
+        kategoriId: item.category_id,
+        harga: item.price,
+        gambar: item.image || '/assets/menu-placeholder.svg',
+        stock: item.stock,
+        habis: item.stock <= 0 || !item.is_available,
+        emoji: item.category?.emoji || '🍗'
+      }))
+
+      // Kategori aktif ngikuti kategori pertama yang tersedia. Kalau kategori
+      // aktif lama dihapus manajer di CMS, pindah ke yang pertama.
+      if (!this.daftarKategori.some(kat => kat.id === this.kategoriAktif)) {
+        this.kategoriAktif = this.daftarKategori[0]?.id ?? null
+      }
+
+      this.render()
+    } catch (error) {
+      console.error('Gagal memuat menu dari API server:', error)
+    }
   }
 
   /** Inisialisasi listener sinyal pembayaran inter-tab (BroadcastChannel / LocalStorage) */
@@ -93,7 +132,7 @@ class KioskApp {
 
   /** Mendapatkan daftar menu berdasarkan kategori aktif */
   dapatkanMenuTampil() {
-    return daftarMenu.filter(item => item.kategori === this.kategoriAktif)
+    return (this.daftarMenu || []).filter(item => item.kategoriId === this.kategoriAktif)
   }
 
   /** Menghitung total harga seluruh item di keranjang */
@@ -256,17 +295,18 @@ class KioskApp {
 
   /** Mendapatkan jumlah item tertentu di keranjang (by id produk) */
   dapatkanQtyItem(id) {
-    const baris = this.keranjang.find(baris => baris.id === id)
+    const baris = this.keranjang.find(baris => String(baris.id) === String(id))
     return baris ? baris.jumlah : 0
   }
 
   /** Menambahkan item langsung ke keranjang */
   tambahItemLangsung(id) {
-    const item = daftarMenu.find(m => m.id === id)
+    const item = (this.daftarMenu || []).find(m => String(m.id) === String(id))
     if (!item || item.habis) return
 
-    const baris = this.keranjang.find(baris => baris.id === id)
+    const baris = this.keranjang.find(baris => String(baris.id) === String(id))
     if (baris) {
+      if (baris.jumlah + 1 > item.stock) return
       baris.jumlah += 1
     } else {
       this.keranjang.push({
@@ -283,7 +323,7 @@ class KioskApp {
 
   /** Mengurangi jumlah item; jika 0, hapus dari keranjang */
   kurangiItemLangsung(id) {
-    const indeks = this.keranjang.findIndex(baris => baris.id === id)
+    const indeks = this.keranjang.findIndex(baris => String(baris.id) === String(id))
     if (indeks === -1) return
 
     this.keranjang[indeks].jumlah -= 1
@@ -317,8 +357,8 @@ class KioskApp {
     this.render()
   }
 
-  /** Memproses pesanan selesai */
-  selesaikanPesanan() {
+  /** Memproses pesanan selesai dan mengirim checkout ke API backend */
+  async selesaikanPesanan() {
     // Bersihkan seluruh timer agar tidak menembak saat layar Sukses/Struk
     clearTimeout(this.timerIdle)
     clearInterval(this.timerAlertIdle)
@@ -328,8 +368,41 @@ class KioskApp {
     // Efek suara sukses (cash register) untuk splash Fase 6
     mainkanSuaraCash()
 
-    const angkaAcak = Math.floor(Math.random() * 900) + 100
-    this.nomorAntrean = `PD-${String(angkaAcak)}`
+    if (this.keranjang.length > 0) {
+      try {
+        const payload = {
+          order_type: this.tipePesanan === 'take' ? 'take_away' : 'dine_in',
+          payment_method: this.metodePembayaran || 'cash',
+          items: this.keranjang.map(item => ({
+            product_id: item.id,
+            quantity: item.jumlah,
+            options: this.buatDetailKustomisasi(item.kustomisasi) || null
+          }))
+        }
+
+        const res = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+
+        const data = await res.json()
+        if (res.ok && data.success) {
+          this.nomorAntrean = data.order_number || data.order?.order_number || 'PD-001'
+        } else {
+          console.warn('Checkout warning:', data.message)
+        }
+      } catch (err) {
+        console.error('Error saat checkout:', err)
+      }
+    }
+
+    // Muat ulang stok produk dari API backend
+    await this.muatMenuFromAPI()
+
     this.langkah = 'sukses'
     this.render()
 
@@ -364,7 +437,7 @@ class KioskApp {
     this.perbaruiAlertIdle()
     this.langkah = 'screensaver'
     this.keranjang = []
-    this.kategoriAktif = 'chicken'
+    this.kategoriAktif = this.daftarKategori[0]?.id ?? null
     this.tampilKonfirmasiBatal = false
     this.metodePembayaran = ''
     this.statusQris = 'menunggu'
@@ -397,7 +470,7 @@ class KioskApp {
 
     // Bersihkan memori belanjaan pelanggan sebelumnya
     this.keranjang = []
-    this.kategoriAktif = 'chicken'
+    this.kategoriAktif = this.daftarKategori[0]?.id ?? null
     this.tampilKonfirmasiBatal = false
     this.metodePembayaran = ''
     this.statusQris = 'menunggu'
@@ -443,7 +516,7 @@ class KioskApp {
         break
 
       case 'setKategori':
-        this.kategoriAktif = argumen
+        this.kategoriAktif = Number(argumen)
         mainkanSuara()
         this.render()
         break
@@ -741,7 +814,7 @@ class KioskApp {
 
     const judulKategori = el.querySelector('[data-bind="judulKategori"]')
     if (judulKategori) {
-      const kategori = daftarKategori.find(kat => kat.id === this.kategoriAktif)
+      const kategori = this.daftarKategori.find(kat => kat.id === this.kategoriAktif)
       judulKategori.textContent = kategori
         ? kategori.label[this.bahasa]
         : t('menu')
@@ -749,7 +822,9 @@ class KioskApp {
 
     const wadahKategori = el.querySelector('[data-list="kategori"]')
     if (wadahKategori) {
-      wadahKategori.innerHTML = daftarKategori.map(kat => this.buatHTMLKategori(kat)).join('')
+      // Kategori kosong tetap muncul sebagai tab — kalau tidak ada produk pun
+      // kategori itu masih bisa dipilih (kategori dibuat duluan di CMS).
+      wadahKategori.innerHTML = this.daftarKategori.map(kat => this.buatHTMLKategori(kat)).join('')
     }
 
     const wadahMenu = el.querySelector('[data-list="menuTampil"]')

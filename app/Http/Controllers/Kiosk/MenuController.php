@@ -3,18 +3,29 @@
 namespace App\Http\Controllers\Kiosk;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 
 class MenuController extends Controller
 {
-    // API: Ambil daftar produk aktif untuk grid menu kiosk
+    // API: Daftar kategori + produk untuk grid menu kiosk.
+    // Kategori dikirim terpisah supaya tab kiosk bisa digambar dari server,
+    // termasuk kategori yang belum punya produk.
     public function index(): JsonResponse
     {
-        $products = Product::where('is_available', true)
-            ->orderBy('category')
-            ->get(['id', 'name', 'category', 'price', 'image', 'stock']);
+        $categories = Category::orderBy('sort_order')
+            ->orderBy('label_id')
+            ->get(['id', 'slug', 'label_id', 'label_en', 'icon', 'emoji', 'sort_order']);
 
-        return response()->json($products);
+        $products = Product::with('category:id,slug,label_id,label_en,icon,emoji,sort_order')
+            ->orderBy('sort_order')
+            ->orderBy('id', 'asc')
+            ->get(['id', 'name', 'category_id', 'price', 'image', 'stock', 'is_available']);
+
+        return response()->json([
+            'categories' => $categories,
+            'products'   => $products,
+        ]);
     }
 }

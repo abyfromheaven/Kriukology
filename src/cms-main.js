@@ -1,53 +1,25 @@
 import './cms.css'
-import menuAwal from './data/menu.js'
-import kategoriMenu from './data/kategori.js'
 
-const STORAGE_KEY = 'kriukology-cms-products-v2'
-const categoryLabels = Object.fromEntries(kategoriMenu.map(item => [item.id, item.label.id]))
 const placeholderImage = '/assets/menu-placeholder.svg'
 
-function loadProducts() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) return JSON.parse(saved)
-  } catch (error) {
-    console.warn('Data CMS lokal tidak dapat dibaca.', error)
-  }
-
-  const initial = menuAwal.map((item, index) => ({
-    id: `dummy-${item.id}`,
-    name: item.nama,
-    category: item.kategori,
-    price: item.harga,
-    image: item.gambar || placeholderImage,
-    stock: index === menuAwal.length - 1 ? 0 : 12,
-  }))
-  saveProducts(initial)
-  return initial
-}
-
-function saveProducts(products) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(products))
-    return true
-  } catch (error) {
-    console.error('Penyimpanan browser penuh atau tidak tersedia.', error)
-    return false
-  }
-}
-
-let products = loadProducts()
+let products = []
+let categories = []
 let activeProductId = null
 let panelMode = null
 let draft = null
 let pendingPanel = null
+let pendingTutup = null
 let errors = {}
+let categoryScreen = null
+let categoryDraft = null
+let categoryError = ''
 
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
 })[char])
 const rupiah = value => `Rp${Number(value || 0).toLocaleString('id-ID')}`
-const getCategoryLabel = value => categoryLabels[value] || value
+const getCategory = id => categories.find(item => String(item.id) === String(id)) || null
+const getCategoryLabel = id => getCategory(id)?.label_id || '—'
 
 document.querySelector('#cms-app').innerHTML = `
   <div class="cms-page">
@@ -61,7 +33,12 @@ document.querySelector('#cms-app').innerHTML = `
         <div class="stripe-band" aria-hidden="true"></div>
       </header>
 
-      <h1>Kelola Produk</h1>
+      <div class="cms-heading">
+        <h1>Kelola Produk</h1>
+        <button class="manage-category-button" id="manage-categories" type="button">
+          Kelola Kategori <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+        </button>
+      </div>
 
       <section class="cms-controls" aria-label="Cari dan tambah produk">
         <label class="search-box">
@@ -95,8 +72,30 @@ const grid = document.querySelector('#product-grid')
 const panelHost = document.querySelector('#panel-host')
 const alertHost = document.querySelector('#alert-host')
 
-function allCategories() {
-  return [...new Set([...kategoriMenu.map(item => item.id), ...products.map(product => product.category)])]
+async function fetchCategories() {
+  try {
+    const res = await fetch('/api/cms/categories')
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    categories = await res.json()
+  } catch (error) {
+    console.error('Gagal mengambil data kategori dari API server:', error)
+  }
+}
+
+async function fetchProducts() {
+  try {
+    const res = await fetch('/api/cms/products')
+    if (res.ok) {
+      const data = await res.json()
+      products = data.map(item => ({
+        ...item,
+        id: String(item.id),
+      }))
+      renderGrid()
+    }
+  } catch (error) {
+    console.error('Gagal mengambil data produk dari API server:', error)
+  }
 }
 
 function renderCategoryFilter() {
@@ -104,7 +103,7 @@ function renderCategoryFilter() {
   categoryFilterLabel.textContent = selected ? getCategoryLabel(selected) : 'Semua'
   categoryMenu.innerHTML = [
     `<button type="button" class="category-option${selected ? '' : ' selected'}" role="option" aria-selected="${!selected}" data-category="">Semua</button>`,
-    ...allCategories().map(value => `<button type="button" class="category-option${selected === value ? ' selected' : ''}" role="option" aria-selected="${selected === value}" data-category="${escapeHtml(value)}">${escapeHtml(getCategoryLabel(value))}</button>`),
+    ...categories.map(item => `<button type="button" class="category-option${selected === String(item.id) ? ' selected' : ''}" role="option" aria-selected="${selected === String(item.id)}" data-category="${escapeHtml(item.id)}">${escapeHtml(item.label_id)}</button>`),
   ].join('')
 }
 
@@ -112,7 +111,7 @@ function visibleProducts() {
   const query = searchInput.value.trim().toLocaleLowerCase('id')
   const category = categoryFilterButton.dataset.value || ''
   return products.filter(product =>
-    product.name.toLocaleLowerCase('id').includes(query) && (!category || product.category === category))
+    product.name.toLocaleLowerCase('id').includes(query) && (!category || String(product.category_id) === category))
 }
 
 function renderGrid() {
@@ -122,7 +121,7 @@ function renderGrid() {
       <span class="stock-label">Stok: ${Number(product.stock)}</span>
       <img class="product-image" src="${escapeHtml(product.image || placeholderImage)}" alt="${escapeHtml(product.name)}" />
       ${Number(product.stock) < 1 ? '<span class="out-of-stock-label">Stok Habis</span>' : ''}
-      <span class="product-category">${escapeHtml(getCategoryLabel(product.category))}</span>
+      <span class="product-category">${escapeHtml(getCategoryLabel(product.category_id))}</span>
       <span class="product-name">${escapeHtml(product.name)}</span>
       <span class="product-price">${rupiah(product.price)}</span>
     </button>`).join('')
@@ -131,26 +130,28 @@ function renderGrid() {
 function openPanel(mode, product = null) {
   panelMode = mode
   activeProductId = product?.id ?? null
-  draft = product ? { ...product } : { id: null, name: '', category: '', price: '', image: '', stock: 0 }
+  draft = product ? { ...product } : { id: null, name: '', category_id: '', price: '', image: '', stock: 0 }
   errors = {}
   renderPanel()
 }
 
 function hasChanges() {
   if (!draft || !panelMode) return false
-  if (panelMode === 'add') return Boolean(draft.category || draft.name.trim() || draft.price || Number(draft.stock) > 0 || draft.image)
-  const original = products.find(product => product.id === activeProductId)
-  return Boolean(original && ['name', 'category', 'price', 'image', 'stock'].some(key => String(draft[key] ?? '') !== String(original[key] ?? '')))
+  if (panelMode === 'add') return Boolean(draft.category_id || draft.name.trim() || draft.price || Number(draft.stock) > 0 || draft.image)
+  const original = products.find(product => String(product.id) === String(activeProductId))
+  return Boolean(original && ['name', 'category_id', 'price', 'image', 'stock'].some(key => String(draft[key] ?? '') !== String(original[key] ?? '')))
 }
 
-function requestPanel(next) {
+function requestPanel(next, setelahTutup = null) {
   if (hasChanges()) {
     pendingPanel = next
+    pendingTutup = setelahTutup
     renderConfirmModal()
     return
   }
   if (!next) closePanel()
   else openPanel(next.mode, next.product)
+  if (setelahTutup) setTimeout(setelahTutup, 250)
 }
 
 function closePanel() {
@@ -176,8 +177,8 @@ function closePanel() {
 function renderPanel() {
   if (!panelMode || !draft) return
   const adding = panelMode === 'add'
-  const categoryOptions = allCategories().map(value =>
-    `<option value="${escapeHtml(getCategoryLabel(value))}"></option>`).join('')
+  const categoryOptions = categories.map(item =>
+    `<option value="${escapeHtml(item.id)}"${String(item.id) === String(draft.category_id) ? ' selected' : ''}>${escapeHtml(item.label_id)}</option>`).join('')
   const image = draft.image || ''
   panelHost.innerHTML = `
     <aside class="cms-panel" aria-label="${adding ? 'Tambah Produk' : 'Modifikasi Produk'}">
@@ -191,8 +192,10 @@ function renderPanel() {
         </div>
 
         <div class="category-field field-wrap">
-          <input id="draft-category" list="category-options" aria-label="Kategori produk" placeholder="Pilih Kategori" value="${escapeHtml(draft.category ? getCategoryLabel(draft.category) : '')}" class="${!draft.category && adding ? 'is-placeholder' : ''}" autocomplete="off" />
-          <datalist id="category-options">${categoryOptions}</datalist>
+          <select id="draft-category" aria-label="Kategori produk"${!draft.category_id && adding ? ' data-placeholder="Pilih Kategori"' : ''}>
+            <option value="">Pilih Kategori</option>
+            ${categoryOptions}
+          </select>
           <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
           <span class="field-error" data-error="category"></span>
         </div>
@@ -241,10 +244,6 @@ function updateDraft(key, value) {
     const field = error?.closest('.field-wrap')
     if (field) field.classList.remove('has-error')
   }
-  if (key === 'category' && panelMode === 'add') {
-    const category = panelHost.querySelector('#draft-category')
-    category?.classList.toggle('is-placeholder', !value)
-  }
   if (key === 'stock') panelHost.querySelector('.stock-stepper')?.classList.toggle('is-empty', panelMode === 'add' && Number(value) < 1)
   const saveButton = panelHost.querySelector('#save-product')
   if (saveButton && panelMode === 'edit') saveButton.disabled = !hasChanges()
@@ -271,7 +270,7 @@ function validateDraft() {
     stock: 'Stok tidak boleh kurang dari 0.',
   }
   let valid = true
-  if (!String(draft.category).trim()) { setError('category', messages.category); valid = false }
+  if (!String(draft.category_id).trim()) { setError('category', messages.category); valid = false }
   if (!String(draft.name).trim()) { setError('name', messages.name); valid = false }
   if (!Number.isFinite(Number(draft.price)) || Number(draft.price) < 1) { setError('price', messages.price); valid = false }
   if (String(draft.stock).trim() === '' || !Number.isInteger(Number(draft.stock)) || Number(draft.stock) < 0 || (panelMode === 'add' && Number(draft.stock) < 1)) {
@@ -281,42 +280,70 @@ function validateDraft() {
   return valid
 }
 
-function persistAndRender() {
-  if (!saveProducts(products)) {
-    window.alert('Penyimpanan browser penuh. Coba gunakan gambar yang lebih kecil.')
-    return false
-  }
-  renderGrid()
-  closePanel()
-  return true
-}
-
-function saveDraft() {
+async function saveDraft() {
   if (!validateDraft()) return
-  const previousProducts = products
-  const normalized = {
-    ...draft,
-    id: draft.id || `cms-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+
+  const saveButton = panelHost.querySelector('#save-product')
+  if (saveButton) saveButton.disabled = true
+
+  const payload = {
     name: draft.name.trim(),
-    category: draft.category.trim(),
+    category_id: Number(draft.category_id),
     price: Number(draft.price),
     stock: Number(draft.stock),
     image: draft.image || placeholderImage,
   }
-  if (panelMode === 'add') products = [...products, normalized]
-  else products = products.map(product => product.id === activeProductId ? normalized : product)
-  if (!persistAndRender()) {
-    products = previousProducts
-    renderGrid()
+
+  try {
+    const isEdit = panelMode === 'edit'
+    const url = isEdit ? `/api/cms/products/${activeProductId}` : '/api/cms/products'
+    const method = isEdit ? 'PUT' : 'POST'
+
+    const res = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    })
+
+    const result = await res.json()
+    if (res.ok && result.success) {
+      await fetchProducts()
+      closePanel()
+    } else {
+      window.alert(result.message || 'Gagal menyimpan produk.')
+    }
+  } catch (error) {
+    console.error('Terjadi kesalahan saat menyimpan produk:', error)
+    window.alert('Terjadi kesalahan koneksi ke server.')
+  } finally {
+    if (saveButton) saveButton.disabled = false
   }
 }
 
-function deleteProduct() {
-  const previousProducts = products
-  products = products.filter(product => product.id !== activeProductId)
-  if (!persistAndRender()) {
-    products = previousProducts
-    renderGrid()
+async function deleteProduct() {
+  if (!activeProductId) return
+
+  try {
+    const res = await fetch(`/api/cms/products/${activeProductId}`, {
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+      }
+    })
+
+    const result = await res.json()
+    if (res.ok && result.success) {
+      await fetchProducts()
+      closePanel()
+    } else {
+      window.alert(result.message || 'Gagal menghapus produk.')
+    }
+  } catch (error) {
+    console.error('Terjadi kesalahan saat menghapus produk:', error)
+    window.alert('Terjadi kesalahan koneksi saat menghapus produk.')
   }
 }
 
@@ -354,7 +381,212 @@ async function readImage(file) {
   renderPanel()
 }
 
-renderGrid()
+// ── KELOLA KATEGORI ────────────────────────────────────────────────────────
+
+const IKON_KATEGORI = [
+  'fa-solid fa-drumstick-bite', 'fa-solid fa-burger', 'fa-solid fa-cookie-bite',
+  'fa-solid fa-ice-cream', 'fa-solid fa-mug-hot', 'fa-solid fa-bowl-food',
+  'fa-solid fa-pizza-slice', 'fa-solid fa-cake-candles', 'fa-solid fa-coffee',
+  'fa-solid fa-lemon', 'fa-solid fa-pepper-hot', 'fa-solid fa-fish',
+  'fa-solid fa-carrot', 'fa-solid fa-wheat-awn', 'fa-solid fa-tag',
+  'fa-solid fa-star', 'fa-solid fa-utensils',
+]
+
+function openCategoryScreen(mode, category = null) {
+  categoryScreen = mode
+  categoryDraft = category
+    ? { ...category }
+    : { id: null, label_id: '', label_en: '', icon: IKON_KATEGORI[0], emoji: '🍗', sort_order: categories.length + 1 }
+  categoryError = ''
+  renderCategoryScreen()
+}
+
+function closeCategoryScreen() {
+  categoryScreen = null
+  categoryDraft = null
+  categoryError = ''
+  renderCategoryScreen()
+}
+
+function renderCategoryScreen() {
+  if (!categoryScreen) return
+
+  const editing = categoryScreen === 'edit'
+  const item = categoryDraft
+  const jumlahProduk = item?.id ? products.filter(p => String(p.category_id) === String(item.id)).length : 0
+  const iconOptions = IKON_KATEGORI.map(icon =>
+    `<option value="${icon}"${icon === item.icon ? ' selected' : ''}>${icon.replace('fa-solid ', '')}</option>`).join('')
+
+  panelHost.innerHTML = `
+    <aside class="cms-panel" aria-label="Kelola Kategori">
+      <button class="panel-close" type="button" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+      <div class="panel-content">
+        <h2 class="panel-title">${editing ? 'Ubah Kategori' : 'Tambah Kategori'}</h2>
+        <p class="panel-hint">Kategori ini otomatis muncul sebagai tab baru di kiosk pelanggan.</p>
+
+        <div class="cat-field field-wrap">
+          <label for="cat-label-id">Nama Kategori (Indonesia)</label>
+          <input id="cat-label-id" type="text" value="${escapeHtml(item.label_id)}" placeholder="Contoh: Menu Musiman" />
+          <span class="field-error" data-cat-error="label_id"></span>
+        </div>
+
+        <div class="cat-field field-wrap">
+          <label for="cat-label-en">Nama Kategori (English)</label>
+          <input id="cat-label-en" type="text" value="${escapeHtml(item.label_en)}" placeholder="Example: Seasonal Menu" />
+          <span class="field-error" data-cat-error="label_en"></span>
+        </div>
+
+        <div class="cat-field field-wrap">
+          <label for="cat-icon">Icon Kiosk</label>
+          <select id="cat-icon">${iconOptions}</select>
+          <span class="cat-icon-preview"><i class="${escapeHtml(item.icon)}" aria-hidden="true"></i></span>
+        </div>
+
+        <div class="cat-row">
+          <div class="cat-field field-wrap">
+            <label for="cat-emoji">Emoji</label>
+            <input id="cat-emoji" type="text" maxlength="8" value="${escapeHtml(item.emoji)}" placeholder="🍗" />
+          </div>
+          <div class="cat-field field-wrap">
+            <label for="cat-order">Urutan</label>
+            <input id="cat-order" type="number" min="0" max="9999" value="${escapeHtml(item.sort_order)}" />
+          </div>
+        </div>
+
+        ${editing ? `<p class="cat-usage">Dipakai ${jumlahProduk} produk. Kategori yang masih dipakai produk tidak bisa dihapus.</p>` : ''}
+        ${categoryError ? `<p class="cat-error-banner">${escapeHtml(categoryError)}</p>` : ''}
+
+        <div class="panel-actions${editing ? '' : ' single-action'}">
+          ${editing ? '<button type="button" class="delete-button" id="delete-category">Hapus</button>' : ''}
+          <button type="button" class="save-button" id="save-category">${editing ? 'Simpan' : 'Tambahkan'}</button>
+        </div>
+      </div>
+    </aside>`
+}
+
+function updateCategoryDraft(key, value) {
+  if (!categoryDraft) return
+  categoryDraft[key] = value
+  if (key === 'icon') {
+    const preview = panelHost.querySelector('.cat-icon-preview i')
+    if (preview) preview.className = value
+  }
+  if (key === 'label_id' || key === 'label_en') {
+    const error = panelHost.querySelector(`[data-cat-error="${key}"]`)
+    if (error) error.textContent = ''
+  }
+}
+
+async function saveCategory() {
+  if (!categoryDraft) return
+
+  const labelId = String(categoryDraft.label_id || '').trim()
+  const labelEn = String(categoryDraft.label_en || '').trim()
+
+  if (!labelId) {
+    const error = panelHost.querySelector('[data-cat-error="label_id"]')
+    if (error) error.textContent = 'Nama kategori wajib diisi.'
+    return
+  }
+  if (!labelEn) {
+    const error = panelHost.querySelector('[data-cat-error="label_en"]')
+    if (error) error.textContent = 'Nama English wajib diisi.'
+    return
+  }
+
+  const payload = {
+    label_id: labelId,
+    label_en: labelEn,
+    icon: categoryDraft.icon,
+    emoji: String(categoryDraft.emoji || '🍗').trim() || '🍗',
+    sort_order: Number(categoryDraft.sort_order) || 0,
+  }
+
+  const editing = categoryScreen === 'edit'
+  const saveButton = panelHost.querySelector('#save-category')
+  if (saveButton) saveButton.disabled = true
+
+  try {
+    const res = await fetch(editing ? `/api/cms/categories/${categoryDraft.id}` : '/api/cms/categories', {
+      method: editing ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    const result = await res.json()
+    if (res.ok && result.success) {
+      await fetchCategories()
+      renderGrid()
+      // Produk ikut memuat label kategori terbaru
+      await fetchProducts()
+      if (categoryScreen === 'add') closeCategoryScreen()
+      else openCategoryScreen('edit', categories.find(c => String(c.id) === String(result.category.id)))
+    } else {
+      categoryError = result.message || 'Gagal menyimpan kategori.'
+      renderCategoryScreen()
+    }
+  } catch (error) {
+    console.error('Terjadi kesalahan saat menyimpan kategori:', error)
+    window.alert('Terjadi kesalahan koneksi ke server.')
+  } finally {
+    const button = panelHost.querySelector('#save-category')
+    if (button) button.disabled = false
+  }
+}
+
+async function deleteCategory() {
+  if (!categoryDraft?.id) return
+
+  if (!window.confirm(`Hapus kategori "${categoryDraft.label_id}"?`)) return
+
+  try {
+    const res = await fetch(`/api/cms/categories/${categoryDraft.id}`, {
+      method: 'DELETE',
+      headers: { 'Accept': 'application/json' },
+    })
+
+    const result = await res.json()
+    if (res.ok && result.success) {
+      await fetchCategories()
+      await fetchProducts()
+      renderGrid()
+      closeCategoryScreen()
+    } else {
+      categoryError = result.message || 'Gagal menghapus kategori.'
+      renderCategoryScreen()
+    }
+  } catch (error) {
+    console.error('Terjadi kesalahan saat menghapus kategori:', error)
+    window.alert('Terjadi kesalahan koneksi saat menghapus kategori.')
+  }
+}
+
+panelHost.addEventListener('input', event => {
+  if (categoryScreen) {
+    const keys = { 'cat-label-id': 'label_id', 'cat-label-en': 'label_en', 'cat-emoji': 'emoji', 'cat-order': 'sort_order' }
+    const key = keys[event.target.id]
+    if (key) updateCategoryDraft(key, event.target.value)
+    return
+  }
+  const panelKeys = { 'draft-name': 'name', 'draft-price': 'price', 'draft-stock': 'stock' }
+  const panelKey = panelKeys[event.target.id]
+  if (panelKey) updateDraft(panelKey, event.target.value)
+})
+
+panelHost.addEventListener('change', event => {
+  if (categoryScreen) {
+    if (event.target.id === 'cat-icon') updateCategoryDraft('icon', event.target.value)
+    return
+  }
+  if (event.target.id === 'draft-category') {
+    updateDraft('category_id', event.target.value)
+    return
+  }
+  if (event.target.id === 'image-input') readImage(event.target.files?.[0]).catch(() => window.alert('Gambar tidak dapat dibaca.'))
+})
+
+// Inisialisasi awal: kategori dulu (produk butuh kategori_id), lalu produk
+fetchCategories().then(fetchProducts)
 
 searchInput.addEventListener('input', renderGrid)
 categoryFilterButton.addEventListener('click', () => {
@@ -377,25 +609,40 @@ document.addEventListener('click', event => {
 })
 document.querySelector('#add-product').addEventListener('click', () => requestPanel({ mode: 'add' }))
 
+document.querySelector('#manage-categories').addEventListener('click', () => {
+  requestPanel(null, () => openCategoryScreen('add'))
+})
+
 grid.addEventListener('click', event => {
   const card = event.target.closest('[data-product-id]')
   if (!card) return
-  const product = products.find(item => item.id === card.dataset.productId)
+  const product = products.find(item => String(item.id) === String(card.dataset.productId))
   if (product) requestPanel({ mode: 'edit', product })
 })
 
 document.addEventListener('click', event => {
-  if (!panelMode || panelHost.contains(event.target) || alertHost.contains(event.target)) return
+  if (categoryScreen || !panelMode) return
+  if (panelHost.contains(event.target) || alertHost.contains(event.target)) return
   if (event.target.closest('.cms-controls')) return
   if (event.target.closest('[data-product-id]')) return
   requestPanel(null)
 })
 
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && panelMode && !alertHost.innerHTML) requestPanel(null)
+  if (event.key === 'Escape' && !alertHost.innerHTML) {
+    if (categoryScreen) closeCategoryScreen()
+    else if (panelMode) requestPanel(null)
+  }
 })
 
 panelHost.addEventListener('click', event => {
+  if (categoryScreen) {
+    if (event.target.closest('.panel-close')) closeCategoryScreen()
+    if (event.target.closest('#save-category')) saveCategory()
+    if (event.target.closest('#delete-category')) deleteCategory()
+    return
+  }
+
   if (event.target.closest('.panel-close')) requestPanel(null)
   const step = event.target.closest('[data-step]')
   if (step) {
@@ -415,48 +662,20 @@ panelHost.addEventListener('keydown', event => {
   }
 })
 
-panelHost.addEventListener('change', event => {
-  if (event.target.id === 'draft-category') {
-    const entry = event.target.value.trim()
-    const existing = allCategories().find(value => getCategoryLabel(value).toLocaleLowerCase('id') === entry.toLocaleLowerCase('id'))
-    updateDraft('category', existing || entry)
-  }
-  if (event.target.id === 'image-input') readImage(event.target.files?.[0]).catch(() => window.alert('Gambar tidak dapat dibaca.'))
-})
-
-panelHost.addEventListener('input', event => {
-  const keys = { 'draft-name': 'name', 'draft-price': 'price', 'draft-stock': 'stock' }
-  const key = keys[event.target.id]
-  if (event.target.id === 'draft-category') {
-    event.target.classList.toggle('is-placeholder', !event.target.value)
-    const entry = event.target.value.trim()
-    const existing = allCategories().find(value => getCategoryLabel(value).toLocaleLowerCase('id') === entry.toLocaleLowerCase('id'))
-    updateDraft('category', existing || entry)
-  }
-  if (key) updateDraft(key, event.target.value)
-})
-
-panelHost.addEventListener('keydown', event => {
-  if (event.target.id === 'draft-category' && event.key === 'Enter') {
-    event.preventDefault()
-    const entry = event.target.value.trim()
-    const existing = allCategories().find(value => getCategoryLabel(value).toLocaleLowerCase('id') === entry.toLocaleLowerCase('id'))
-    updateDraft('category', existing || entry)
-    event.target.value = getCategoryLabel(existing || entry)
-    event.target.blur()
-  }
-})
-
 alertHost.addEventListener('click', event => {
   if (event.target.closest('.confirm-cancel')) {
     alertHost.innerHTML = ''
     pendingPanel = null
+    pendingTutup = null
   }
   if (event.target.closest('.confirm-continue')) {
     const next = pendingPanel
+    const lanjut = pendingTutup
     alertHost.innerHTML = ''
     pendingPanel = null
-    if (!next) closePanel()
-    else openPanel(next.mode, next.product)
+    pendingTutup = null
+    if (next) openPanel(next.mode, next.product)
+    else closePanel()
+    if (lanjut) setTimeout(lanjut, 250)
   }
 })

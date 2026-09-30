@@ -16,23 +16,41 @@ class OrderController extends Controller
     public function checkout(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'order_type'   => 'required|in:dine_in,take_away',
-            'items'        => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity'   => 'required|integer|min:1',
-            'items.*.options'    => 'nullable|string',
+            'order_type'        => 'required|in:dine_in,take_away,dine,take',
+            'payment_method'    => 'nullable|string',
+            'items'             => 'required|array|min:1',
+            'items.*.product_id'=> 'required|exists:products,id',
+            'items.*.quantity'  => 'required|integer|min:1',
+            'items.*.options'   => 'nullable|string',
         ]);
 
+        // Normalisasi order_type
+        $orderType = in_array($validated['order_type'], ['take_away', 'take']) ? 'take_away' : 'dine_in';
+        $paymentMethod = $validated['payment_method'] ?? 'cash';
+
         try {
-            $order = DB::transaction(function () use ($validated) {
-                // Hitung total ulang dari harga database terkini (bukan dari klien)
+            $order = DB::transaction(function () use ($validated, $orderType, $paymentMethod) {
                 $totalPrice = 0;
                 $orderItems = [];
 
                 foreach ($validated['items'] as $item) {
-                    $product = Product::findOrFail($item['product_id']);
+                    $product = Product::lockForUpdate()->findOrFail($item['product_id']);
+
+                    // Cek ketersediaan stok
+                    if ($product->stock < $item['quantity']) {
+                        throw new \Exception("Stok untuk produk '{$product->name}' tidak mencukupi (Tersisa: {$product->stock}).");
+                    }
+
                     $subtotal = $product->price * $item['quantity'];
                     $totalPrice += $subtotal;
+
+                    // Potong stok
+                    $product->stock -= $item['quantity'];
+                    if ($product->stock <= 0) {
+                        $product->stock = 0;
+                        $product->is_available = false;
+                    }
+                    $product->save();
 
                     $orderItems[] = [
                         'product_id' => $product->id,
@@ -42,20 +60,18 @@ class OrderController extends Controller
                     ];
                 }
 
-                // Generate nomor antrean unik (#001, #002, ...)
+                // Generate nomor antrean unik (PD-001, PD-002, ...)
                 $lastOrder = Order::orderBy('id', 'desc')->first();
-                $nextNumber = $lastOrder
-                    ? intval(substr($lastOrder->order_number, 1)) + 1
-                    : 1;
-                $orderNumber = '#' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+                $nextNumber = $lastOrder ? $lastOrder->id + 1 : 1;
+                $orderNumber = 'PD-' . str_pad($nextNumber % 1000 ?: 1000, 3, '0', STR_PAD_LEFT);
 
                 // Simpan pesanan + detail dalam satu transaksi
                 $order = Order::create([
-                    'order_number'  => $orderNumber,
-                    'total_price'   => $totalPrice,
-                    'payment_method' => 'cash',
-                    'status'        => 'pending',
-                    'order_type'    => $validated['order_type'],
+                    'order_number'   => $orderNumber,
+                    'total_price'    => $totalPrice,
+                    'payment_method' => $paymentMethod,
+                    'status'         => 'completed',
+                    'order_type'     => $orderType,
                 ]);
 
                 foreach ($orderItems as $oi) {
@@ -66,14 +82,15 @@ class OrderController extends Controller
             });
 
             return response()->json([
-                'success' => true,
-                'order'   => $order->only(['id', 'order_number', 'total_price', 'status']),
+                'success'      => true,
+                'order_number' => $order->order_number,
+                'order'        => $order->only(['id', 'order_number', 'total_price', 'status', 'payment_method']),
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal membuat pesanan: ' . $e->getMessage(),
-            ], 500);
+                'message' => $e->getMessage(),
+            ], 400);
         }
     }
 }
