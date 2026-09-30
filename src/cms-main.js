@@ -2,7 +2,7 @@ import './cms.css'
 import menuAwal from './data/menu.js'
 import kategoriMenu from './data/kategori.js'
 
-const STORAGE_KEY = 'kriukology-cms-products-v1'
+const STORAGE_KEY = 'kriukology-cms-products-v2'
 const categoryLabels = Object.fromEntries(kategoriMenu.map(item => [item.id, item.label.id]))
 const placeholderImage = '/assets/menu-placeholder.svg'
 

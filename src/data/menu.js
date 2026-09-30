@@ -6,183 +6,135 @@
  * Setiap menu memiliki properti: id, nama, harga, kategori, gambar, emoji, tag, dan deskripsi.
  *
  * Kategori yang didukung:
- * promotion, chicken, bucket, burger, snack, kids, dessert
+ * chicken, burger, snack, dessert, beverage
+ *
+ * CATATAN GAMBAR:
+ * Seluruh gambar memakai file lokal di /assets/produk/. Spasi pada nama file
+ * ditulis sebagai %20 agar valid di atribut src. Ukuran/aspect ratio bebas —
+ * kartu produk di kiosk memakai object-contain + aspect-square sehingga
+ * gambar apa pun tampil utuh tanpa perlu penyesuaian per gambar.
  * ==========================================================================
  */
 
 const daftarMenu = [
-  // ── 1. Promotion ──────────────────────────────────────────────────────
+  // ── 1. Chicken ────────────────────────────────────────────────────────
   {
     id: 1,
-    nama: 'Super Promo Hemat',
+    nama: 'Ayam Goreng Crispy 1 Ekor',
     harga: 28000,
-    kategori: 'promotion',
-    gambar: 'https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?w=500&auto=format&fit=crop&q=80',
-    emoji: '🔥',
-    tag: 'PROMO 30%',
-    deskripsi: '1 Ayam Krispi + Nasi + Es Teh',
+    kategori: 'chicken',
+    gambar: '/assets/produk/Chicken%201%20Ekor.png',
+    emoji: '🍗',
+    tag: 'BEST SELLER',
+    deskripsi: 'Ayam krispi utuh satu ekor, renyah di luar dan juicy di dalam',
   },
   {
     id: 2,
-    nama: 'Combo Berdua Super',
-    harga: 52000,
-    kategori: 'promotion',
-    gambar: 'https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=500&auto=format&fit=crop&q=80',
-    emoji: '🏷️',
-    tag: 'SPECIAL OFFER',
-    deskripsi: '2 Ayam Krispi + 2 Nasi + 2 Pepsi',
-  },
-
-  // ── 2. Chicken ────────────────────────────────────────────────────────
-  {
-    id: 5,
-    nama: '1 Pcs Ayam Crispy',
-    harga: 19500,
+    nama: 'Chicken Sayap 6 Pcs',
+    harga: 32000,
     kategori: 'chicken',
-    gambar: 'https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?w=500&auto=format&fit=crop&q=80',
+    gambar: '/assets/produk/Chicken%20Sayap.jpg',
     emoji: '🍗',
     tag: '',
-    deskripsi: 'Ayam krispi renyah di luar, juicy di dalam',
+    deskripsi: 'Enam potong sayap ayam krispi, pas dicocol saus favorit',
+  },
+
+  // ── 2. Bowl / Burger ──────────────────────────────────────────────────
+  {
+    id: 3,
+    nama: 'Yakiniku Don',
+    harga: 29000,
+    kategori: 'burger',
+    gambar: '/assets/produk/Yakiniku%20Don.jpg',
+    emoji: '🍚',
+    tag: '',
+    deskripsi: 'Nasi hangat dengan potongan ayam yakiniku manis kecap',
+  },
+  {
+    id: 4,
+    nama: 'Zinger Burger',
+    harga: 34000,
+    kategori: 'burger',
+    gambar: '/assets/produk/Burger.jpg',
+    emoji: '🍔',
+    tag: 'BEST SELLER',
+    deskripsi: 'Burger fillet ayam krispi dengan selada segar dan saus zinger',
+  },
+
+  // ── 3. Snack / Sides ──────────────────────────────────────────────────
+  {
+    id: 5,
+    nama: 'Chicken Popcorn',
+    harga: 26000,
+    kategori: 'snack',
+    gambar: '/assets/produk/Chicken%20Popcorn.jpg',
+    emoji: '🍿',
+    tag: '',
+    deskripsi: 'Popcorn ayam krispi ukuran gigitan, gurihnya bikin nagih',
   },
   {
     id: 6,
-    nama: '1 Pcs Ayam Original',
-    harga: 19500,
-    kategori: 'chicken',
-    gambar: 'https://images.unsplash.com/photo-1585325701165-351af916e581?w=500&auto=format&fit=crop&q=80',
-    emoji: '🍗',
-    tag: 'CLASSIC',
-    deskripsi: 'Ayam goreng dengan 11 bumbu rahasia',
+    nama: 'French Fries',
+    harga: 14000,
+    kategori: 'snack',
+    gambar: '/assets/produk/French%20Fries.jpg',
+    emoji: '🍟',
+    tag: '',
+    deskripsi: 'Kentang goreng renyah dengan sedikit garam',
   },
   {
     id: 7,
-    nama: '2 Pcs Ayam Combo',
-    harga: 38000,
-    kategori: 'chicken',
-    gambar: 'https://images.unsplash.com/photo-1562967914-608f82629710?w=500&auto=format&fit=crop&q=80',
-    emoji: '🍗',
+    nama: 'Cream Soup',
+    harga: 15000,
+    kategori: 'snack',
+    gambar: '/assets/produk/Cream%20Soup.jpg',
+    emoji: '🍲',
     tag: '',
-    deskripsi: '2 potong ayam crispy / original pilihan',
+    deskripsi: 'Sup krim jamur hangat yang gurihnya lembut',
   },
 
-  // ── 3. Bucket & Sharing ──────────────────────────────────────────────
+  // ── 4. Dessert ────────────────────────────────────────────────────────
+  {
+    id: 8,
+    nama: 'Coconut Sundae',
+    harga: 14000,
+    kategori: 'dessert',
+    gambar: '/assets/produk/Choconut%20Sundae.jpg',
+    emoji: '🍦',
+    tag: '',
+    deskripsi: 'Es krim kelapa lembut dengan saus cokelat manis',
+  },
+  {
+    id: 9,
+    nama: 'Donut Gula',
+    harga: 12000,
+    kategori: 'dessert',
+    gambar: '/assets/produk/Donut.jpg',
+    emoji: '🍩',
+    tag: 'FAVORIT',
+    deskripsi: 'Donut lembut dengan taburan cokelat dan sprinkles',
+  },
+
+  // ── 5. Beverage ───────────────────────────────────────────────────────
   {
     id: 10,
-    nama: 'Bucket 9 Pcs Ayam',
-    harga: 145000,
-    kategori: 'bucket',
-    gambar: 'https://images.unsplash.com/photo-1562967914-608f82629710?w=500&auto=format&fit=crop&q=80',
-    emoji: '🪣',
-    tag: 'PARTY PACK',
-    deskripsi: '9 potong ayam krispi untuk kumpul seru',
+    nama: 'Iced Cappuccino Float',
+    harga: 22000,
+    kategori: 'beverage',
+    gambar: '/assets/produk/Iced%20Cappucino%20Float.jpg',
+    emoji: '☕',
+    tag: '',
+    deskripsi: 'Es cappuccino dingin dengan Cuban ice cream melimpah',
   },
   {
     id: 11,
-    nama: 'Snack Bucket Family',
-    harga: 68000,
-    kategori: 'bucket',
-    gambar: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=500&auto=format&fit=crop&q=80',
-    emoji: '🍿',
-    tag: '',
-    deskripsi: 'French Fries + Chicken Balls + Waffle',
-  },
-
-  // ── 4. Bowl / Burger ─────────────────────────────────────────────────
-  {
-    id: 12,
-    nama: 'Zinger Burger Super',
-    harga: 34000,
-    kategori: 'burger',
-    gambar: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&auto=format&fit=crop&q=80',
-    emoji: '🍔',
-    tag: 'BEST SELLER',
-    deskripsi: 'Burger fillet ayam krispi ekstra pedas',
-  },
-  {
-    id: 13,
-    nama: 'Oriental Chicken Bowl',
-    harga: 27000,
-    kategori: 'burger',
-    gambar: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=500&auto=format&fit=crop&q=80',
-    emoji: '🍚',
-    tag: '',
-    deskripsi: 'Nasi warmly served dengan potongan ayam saus oriental',
-  },
-
-  // ── 5. Snack / Sides ─────────────────────────────────────────────────
-  {
-    id: 14,
-    nama: 'French Fries Large',
-    harga: 21000,
-    kategori: 'snack',
-    gambar: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=500&auto=format&fit=crop&q=80',
-    emoji: '🍟',
-    tag: '',
-    deskripsi: 'Kentang goreng gurih renyah ukuran besar',
-  },
-  {
-    id: 15,
-    nama: 'Chicken Strips 3 Pcs',
+    nama: 'Mocha Float',
     harga: 24000,
-    kategori: 'snack',
-    gambar: 'https://images.unsplash.com/photo-1562967916-eb82221dfb92?w=500&auto=format&fit=crop&q=80',
-    emoji: '🥓',
-    tag: '',
-    deskripsi: 'Fillet ayam krispi tanpa tulang',
-  },
-  {
-    id: 16,
-    nama: 'Crispy Skin / Kulit Ayam',
-    harga: 16000,
-    kategori: 'snack',
-    gambar: 'https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=500&auto=format&fit=crop&q=80',
-    emoji: '✨',
-    tag: 'REKOR KRIUK',
-    deskripsi: 'Kulit ayam goreng kriuk super gurih',
-  },
-
-  // ── 6. Kids Meal ─────────────────────────────────────────────────────
-  {
-    id: 20,
-    nama: 'Chaki Kids Combo A',
-    harga: 38000,
-    kategori: 'kids',
-    gambar: 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=500&auto=format&fit=crop&q=80',
-    emoji: '🧸',
-    tag: 'FREE TOY',
-    deskripsi: '1 Ayam Mild + Nasi + Milo + Mainan',
-  },
-  {
-    id: 21,
-    nama: 'Chaki Kids Burger Pack',
-    harga: 36000,
-    kategori: 'kids',
-    gambar: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=500&auto=format&fit=crop&q=80',
-    emoji: '🍔',
-    tag: 'FREE TOY',
-    deskripsi: 'Junior Burger + Fries + Juice + Mainan',
-  },
-
-  // ── 7. Dessert ──────────────────────────────────────────────────────
-  {
-    id: 24,
-    nama: 'Sundae Chocolate',
-    harga: 11000,
-    kategori: 'dessert',
-    gambar: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=500&auto=format&fit=crop&q=80',
-    emoji: '🍦',
-    tag: '',
-    deskripsi: 'Es krim lembut dengan saus cokelat manis',
-  },
-  {
-    id: 25,
-    nama: 'Egg Tart Warm',
-    harga: 13000,
-    kategori: 'dessert',
-    gambar: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500&auto=format&fit=crop&q=80',
-    emoji: '🥧',
-    tag: 'FAVORIT',
-    deskripsi: 'Pastry renyah isi vla telur hangat',
+    kategori: 'beverage',
+    gambar: '/assets/produk/Mocha%20Float.jpg',
+    emoji: '🍫',
+    tag: 'BEST SELLER',
+    deskripsi: 'Mocha dingin dengan whip cream dan gerELY cokelat',
   },
 ]
 

@@ -2,32 +2,20 @@
  * ==========================================================================
  * DATA KATEGORI MENU
  * ==========================================================================
- * Berisi 7 kategori KFC utama yang digunakan di kiosk Kriukology:
- * 1. promotion  — Promotion / Promo Spesial
- * 2. chicken    — Chicken / Ayam Goreng Krispi
- * 3. bucket     — Bucket & Sharing
- * 4. burger     — Bowl / Burger
- * 5. snack      — Snack / Sides
- * 6. kids       — Kids Meal
- * 7. dessert    — Dessert / Makanan Penutup
+ * Berisi 5 kategori menu yang digunakan di kiosk Kriukology:
+ * 1. chicken    — Chicken / Ayam Goreng Krispi
+ * 2. burger     — Bowl / Burger
+ * 3. snack      — Snack / Sides
+ * 4. dessert    — Dessert / Makanan Penutup
+ * 5. beverage   — Beverage / Minuman Dingin
  * ==========================================================================
  */
 
 const daftarKategori = [
   {
-    id: 'promotion',
-    icon: 'fa-solid fa-tags',
-    label: { id: 'Promotion', en: 'Promotion' },
-  },
-  {
     id: 'chicken',
     icon: 'fa-solid fa-drumstick-bite',
     label: { id: 'Chicken', en: 'Chicken' },
-  },
-  {
-    id: 'bucket',
-    icon: 'fa-solid fa-layer-group',
-    label: { id: 'Bucket & Sharing', en: 'Bucket & Sharing' },
   },
   {
     id: 'burger',
@@ -40,14 +28,14 @@ const daftarKategori = [
     label: { id: 'Snack / Sides', en: 'Snack / Sides' },
   },
   {
-    id: 'kids',
-    icon: 'fa-solid fa-child',
-    label: { id: 'Kids Meal', en: 'Kids Meal' },
-  },
-  {
     id: 'dessert',
     icon: 'fa-solid fa-ice-cream',
     label: { id: 'Dessert', en: 'Dessert' },
+  },
+  {
+    id: 'beverage',
+    icon: 'fa-solid fa-mug-hot',
+    label: { id: 'Beverage', en: 'Beverage' },
   },
 ]
 

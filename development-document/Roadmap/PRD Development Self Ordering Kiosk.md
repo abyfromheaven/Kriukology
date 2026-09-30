@@ -58,8 +58,8 @@
 ## 3. Fase 3: Layar Menu Utama (Section Terbesar)
 
 - Desain Header: Banner logo `banner_kriukology.png` di tengah. Sisi kanan dan kirinya diberi motif garis belang merah-putih vertikal (memberikan aura estetik interior restoran cepat saji).
-- Desain Sidebar (Sisi Kiri): Berisi 7 tombol kategori menu (Urutan pertama: Promotion terbuka otomatis secara _default_). Di bagian bawah _sidebar_ terdapat tombol "Kembali" (untuk ganti tipe makan) dan tombol "Ganti Bahasa" instan.
-- Desain Grid Produk (Sisi Kanan): Menampilkan deretan kartu produk mockup yang dinamis berdasarkan kategori yang diklik pada _sidebar_.
+- Desain Sidebar (Sisi Kiri): Berisi 5 tombol kategori menu — Chicken, Bowl / Burger, Snack / Sides, Dessert, Beverage (Urutan pertama: Chicken terbuka otomatis secara _default_). Di bagian bawah _sidebar_ terdapat tombol "Kembali" (untuk ganti tipe makan) dan tombol "Ganti Bahasa" instan.
+- Desain Grid Produk (Sisi Kanan): Menampilkan deretan kartu produk mockup yang dinamis berdasarkan kategori yang diklik pada _sidebar_. Area gambar kartu memakai `aspect-square` + `object-contain` dengan latar putih, sehingga gambar produk dengan aspect ratio berapa pun (persegi, landscape, atau portrait) tampil utuh tanpa perlu penyesuaian per gambar.
 - Atur Logika Keranjang & Bottom Bar (Interaktivitas):
     
     - _Kondisi Awal:_ _Bottom bar_ keranjang belanja berstatus tersembunyi (`hidden`). Tombol pada kartu makanan bertuliskan "Tambahkan".

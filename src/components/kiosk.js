@@ -35,7 +35,7 @@ class KioskApp {
     this.langkah = 'screensaver'
     this.bahasa = 'id'
     this.tipePesanan = ''
-    this.kategoriAktif = 'promotion'
+    this.kategoriAktif = 'chicken'
     this.keranjang = []
     this.tampilKonfirmasiBatal = false
     this.metodePembayaran = ''
@@ -364,7 +364,7 @@ class KioskApp {
     this.perbaruiAlertIdle()
     this.langkah = 'screensaver'
     this.keranjang = []
-    this.kategoriAktif = 'promotion'
+    this.kategoriAktif = 'chicken'
     this.tampilKonfirmasiBatal = false
     this.metodePembayaran = ''
     this.statusQris = 'menunggu'
@@ -397,7 +397,7 @@ class KioskApp {
 
     // Bersihkan memori belanjaan pelanggan sebelumnya
     this.keranjang = []
-    this.kategoriAktif = 'promotion'
+    this.kategoriAktif = 'chicken'
     this.tampilKonfirmasiBatal = false
     this.metodePembayaran = ''
     this.statusQris = 'menunggu'
@@ -609,8 +609,8 @@ class KioskApp {
 
     return `
       <article class="rounded-2xl bg-white overflow-hidden border border-stone-100 shadow-[0_4px_16px_rgba(42,36,36,0.06)] flex flex-col justify-between transition-all duration-200 hover:shadow-md ${habis ? 'opacity-60 grayscale' : ''}">
-        <div class="h-36 sm:h-40 relative overflow-hidden bg-stone-100 rounded-t-2xl shrink-0">
-          <img src="${srcGambar}" alt="${item.nama}" class="w-full h-full object-cover transition-transform duration-300 hover:scale-105" loading="lazy" />
+        <div class="aspect-square relative overflow-hidden bg-white rounded-t-2xl shrink-0">
+          <img src="${srcGambar}" alt="${item.nama}" class="w-full h-full object-contain transition-transform duration-300 hover:scale-105" loading="lazy" />
           ${overlayHabis}
         </div>
         <div class="p-2.5 flex flex-col flex-1 justify-between min-h-[85px]">

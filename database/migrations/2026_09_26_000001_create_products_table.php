@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('category');
             $table->integer('price');
-            $table->string('image')->default('default-chicken.png');
+            $table->string('image')->default('/assets/menu-placeholder.svg');
             $table->integer('stock')->default(100);
             $table->boolean('is_available')->default(true);
             $table->timestamps();
