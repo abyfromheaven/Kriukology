@@ -31,7 +31,8 @@ class KioskApp {
   constructor() {
     // ── State Aplikasi ─────────────────────────────────────────────────
     this.langkah = 'screensaver'
-    this.langkahTerakhir = null
+    this.layarAktif = null
+    this.layarBaruTadi = false
     this.bahasa = 'id'
     this.tipePesanan = ''
     this.kategoriAktif = null
@@ -438,11 +439,21 @@ class KioskApp {
     this.langkah = 'sukses'
     this.render()
 
+    // Tahan 2.6 detik (animasi masuk ~1.3s + baca), lalu 0.7 detik animasi
+    // keluar sebelum pindah ke struk.
     setTimeout(() => {
-      this.langkah = 'struk'
-      this.mulaiTimerStruk()
-      this.render()
-    }, 2500)
+      const elSukses = document.querySelector('[data-screen="sukses"]')
+      elSukses?.classList.add('sukses-keluar')
+
+      setTimeout(() => {
+        // Bersihkan kelas animasi, kalau tidak layar ini "tertinggal" fade
+        // dan tidak bisa tampil normal di pesanan berikutnya.
+        elSukses?.classList.remove('sukses-keluar')
+        this.langkah = 'struk'
+        this.mulaiTimerStruk()
+        this.render()
+      }, 700)
+    }, 2600)
   }
 
   /** Memulai timer countdown struk (10 detik) */
@@ -652,6 +663,23 @@ class KioskApp {
     document.querySelectorAll('[data-screen]').forEach(el => {
       el.style.display = el.dataset.screen === this.langkah ? '' : 'none'
     })
+
+    // Transisi masuk layar — diputar sekali setiap kali layar berganti, bukan
+    // setiap render (kalau tidak, animasi berputar ulang tiap state berubah).
+    if (this.langkah !== this.layarAktif) {
+      this.layarAktif = this.langkah
+      // Layar ini baru saja dibuka — dipakai renderKeranjang/sukses untuk
+      // menyalakan animasi masuk sekaligus saja.
+      this.layarBaruTadi = true
+      const elBaru = document.querySelector(`[data-screen="${this.langkah}"]`)
+      if (elBaru) {
+        elBaru.classList.remove('layar-masuk')
+        void elBaru.offsetWidth
+        elBaru.classList.add('layar-masuk')
+      }
+    } else {
+      this.layarBaruTadi = false
+    }
 
     // Mulai rotasi poster jika di screensaver
     if (this.langkah === 'screensaver') {
@@ -938,8 +966,7 @@ class KioskApp {
 
     // Reveal hanya diputar saat layar baru dibuka. Kalau tidak, tiap ubah
     // jumlah akan memicu animasi dari awal dan card berkedip.
-    const baruMuncul = this.langkah === 'keranjang' && this.langkahTerakhir !== 'keranjang'
-    this.langkahTerakhir = this.langkah
+    const baruMuncul = this.layarAktif === 'keranjang' && this.layarBaruTadi
 
     const wadahItem = el.querySelector('[data-list="keranjangItems"]')
     if (wadahItem) {
@@ -1049,11 +1076,23 @@ class KioskApp {
     if (!el) return
     const t = (kunci) => this.terjemahkan(kunci)
 
+    // Judul berbeda per metode: QRIS → "Pembayaran Berhasil", selain itu → "Terima Kasih!"
+    const judul = this.metodePembayaran === 'qris' ? t('thankQris') : t('thank')
+
     const elTerimaKasih = el.querySelector('[data-bind="thankText"]')
-    if (elTerimaKasih) elTerimaKasih.textContent = t('thank')
+    if (elTerimaKasih) elTerimaKasih.textContent = judul
 
     const elProses = el.querySelector('[data-bind="processingText"]')
     if (elProses) elProses.textContent = t('processing')
+
+    // Animasi masuk hanya diputar sekali saat layar sukses baru dibuka.
+    // Wajib dicek this.langkah: renderSukses() dipanggil di setiap render(),
+    // jadi tanpa pengecekan ini kelas akan dipasang saat layar masih hidden.
+    if (this.langkah === 'sukses' && this.layarBaruTadi) {
+      el.classList.remove('sukses-masuk')
+      void el.offsetWidth
+      el.classList.add('sukses-masuk')
+    }
   }
 
   /** Render layar struk digital */

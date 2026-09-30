@@ -234,6 +234,71 @@ button:focus-visible { outline: 3px solid #f5bd27; outline-offset: 3px; }
   transform: scale(1.06);
 }
 
+/* ── Transisi Antar Layar ──────────────────────────────────────────── */
+/* Dipicu sekali setiap layar berganti (kelas dipasang di render()).
+   Fade + zoom ringan supaya perpindahan tidak terasa terpotong. */
+.layar-masuk {
+  animation: layar-masuk .34s ease-out both;
+}
+
+@keyframes layar-masuk {
+  from { opacity: 0; transform: scale(.985); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── Layar Sukses: masuk (bertahap) & keluar (fade naik) ──────────── */
+/* Delay bertahap: lingkaran centang → judul → keterangan */
+.sukses-masuk .sukses-check {
+  animation: sukses-check-masuk .6s cubic-bezier(.34, 1.56, .64, 1) both;
+}
+
+.sukses-masuk [data-bind="thankText"] {
+  animation: sukses-teks-masuk .55s ease-out .32s both;
+}
+
+.sukses-masuk .sukses-catatan {
+  animation: sukses-teks-masuk .55s ease-out .58s both;
+}
+
+@keyframes sukses-check-masuk {
+  from { opacity: 0; transform: scale(.3) rotate(-22deg); }
+  to   { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@keyframes sukses-teks-masuk {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Lingkaran centang merah solid (sesuai sketsa) */
+.sukses-check {
+  width: 88px;
+  height: 88px;
+  margin: 0 auto;
+  border-radius: 9999px;
+  background: #d51f32;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 38px;
+  box-shadow: 0 10px 30px rgba(213, 31, 50, .28);
+}
+
+@media (min-width: 640px) {
+  .sukses-check { width: 100px; height: 100px; font-size: 44px; }
+}
+
+/* Keluar: fade + naik sedikit, lalu layar berikutnya tampil */
+.sukses-keluar {
+  animation: sukses-keluar .45s ease-in both;
+}
+
+@keyframes sukses-keluar {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(-18px) scale(.97); }
+}
+
 /* ── Notifikasi Bubble (pengganti alert browser) ───────────────────── */
 /* Muncul dari atas, hilang sendiri setelah ~3.2 detik (diatur di JS) */
 .buble-masuk {
