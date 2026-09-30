@@ -17,7 +17,7 @@
 }
 
 * { box-sizing: border-box; }
-body { min-width: 320px; margin: 0; background: #fff; }
+body { min-width: 320px; margin: 0; overflow-x: clip; background: #fff; }
 button, input, select { font: inherit; }
 button { cursor: pointer; }
 
@@ -161,36 +161,36 @@ button { cursor: pointer; }
 
 /* Revisi visual halaman CMS */
 .cms-page { padding: 0; }
-.cms-frame { min-height: 100vh; padding: 0 24px 28px; border: 0; border-radius: 0; }
+.cms-frame { --frame-pad: 24px; min-height: 100vh; padding: 0 var(--frame-pad) 28px; border: 0; border-radius: 0; }
 .cms-header {
-  --stripes: 15;
+  --stripes: 12;
+  --brand-w: min(520px, 54%);
   position: relative;
-  left: 50%;
-  width: 100vw;
+  width: calc(100% + var(--frame-pad) * 2);
   height: 102px;
-  margin-left: -50vw;
+  margin-left: calc(var(--frame-pad) * -1);
   display: block;
 }
 .cms-header .stripe-band {
   position: absolute;
   top: 0;
-  width: calc((100vw - min(520px, 54vw)) / 2);
+  width: calc((100% - var(--brand-w)) / 2);
   height: 76px;
-  background-image: linear-gradient(90deg, #e92e32 0 46%, #fff 46% 100%);
+  background-image: linear-gradient(90deg, #e92e32 0 40%, #fff 40% 100%);
   background-size: calc(100% / var(--stripes)) 100%;
   background-repeat: repeat;
 }
 .cms-header .stripe-band:first-child { left: 0; }
 .cms-header .stripe-band:last-child {
   right: 0;
-  background-image: linear-gradient(to left, #e92e32 0 46%, #fff 46% 100%);
+  background-image: linear-gradient(to left, #e92e32 0 40%, #fff 40% 100%);
 }
 .brand-space {
   position: absolute;
   z-index: 1;
   top: 4px;
   left: 50%;
-  width: min(520px, 54vw);
+  width: var(--brand-w);
   height: 88px;
   margin: 0;
   transform: translateX(-50%);
@@ -246,8 +246,17 @@ button { cursor: pointer; }
   container-type: inline-size;
 }
 .product-image { height: 55%; min-height: 0; flex: 0 0 55%; }
-.product-name, .product-price { font-size: clamp(15px, 6.5cqw, 26px); }
-.stock-label, .product-category { font-size: clamp(13px, 4.4cqw, 18px); }
+.product-name {
+  font-size: clamp(16px, 7.2cqw, 26px);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+.product-price { font-size: clamp(14px, 6cqw, 22px); font-weight: 600; }
+.stock-label { font-size: clamp(13px, 5.2cqw, 18px); }
+.product-category { font-size: clamp(11px, 4.1cqw, 14px); }
 .cms-panel {
   top: 50%;
   right: 18px;
@@ -263,22 +272,25 @@ button { cursor: pointer; }
 @keyframes slide-in { from { transform: translate(110%, -50%); } to { transform: translate(0, -50%); } }
 @keyframes slide-out { to { transform: translate(110%, -50%); } }
 
+@media (max-width: 1400px) {
+  .cms-header { --stripes: 10; }
+}
 @media (max-width: 1100px) {
-  .cms-header { --stripes: 11; }
+  .cms-header { --stripes: 8; }
 }
 @media (max-width: 800px) {
-  .cms-header { --stripes: 8; height: 82px; }
-  .cms-header .stripe-band { width: calc((100vw - min(450px, 60vw)) / 2); height: 60px; }
-  .brand-space { width: min(450px, 60vw); height: 74px; top: 2px; gap: 8px; }
+  .cms-header { --stripes: 6; --brand-w: min(450px, 60%); height: 82px; }
+  .cms-header .stripe-band { height: 60px; }
+  .brand-space { height: 74px; top: 2px; gap: 8px; }
   .brand-logo { width: 125px; height: 62px; }
   .brand-banner { width: 245px; height: 68px; }
 }
 @media (max-width: 480px) {
   .cms-page { padding: 0; }
-  .cms-frame { min-height: 100vh; padding: 0 12px 18px; border: 0; border-radius: 0; }
-  .cms-header { --stripes: 5; height: 66px; }
-  .cms-header .stripe-band { width: calc((100vw - min(270px, 62vw)) / 2); height: 48px; }
-  .brand-space { width: min(270px, 62vw); height: 60px; top: 1px; gap: 3px; }
+  .cms-frame { --frame-pad: 12px; min-height: 100vh; padding: 0 var(--frame-pad) 18px; border: 0; border-radius: 0; }
+  .cms-header { --stripes: 4; --brand-w: min(270px, 62%); height: 66px; }
+  .cms-header .stripe-band { height: 48px; }
+  .brand-space { height: 60px; top: 1px; gap: 3px; }
   .brand-logo { width: 82px; height: 46px; }
   .brand-banner { width: 165px; height: 48px; }
   .cms-frame h1 { margin: 0 0 14px; }
