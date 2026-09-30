@@ -2,49 +2,75 @@
  * ==========================================================================
  * TEMPLATE: LAYAR STRUK DIGITAL
  * ==========================================================================
- * Layar terakhir yang menampilkan struk digital pesanan.
+ * Struk cetak Kriukology. Mengikuti sketsa struk:
+ * 1. Kop: logo + banner monokrom + alamat
+ * 2. Nomor Pesanan (KL-00, berurutan)
+ * 3. Tipe pesanan (DINE IN / TAKE AWAY) + tanggal server
+ * 4. Rincian produk: jumlah | nama | harga satuan
+ * 5. Total pembayaran + metode pembayaran
+ * 6. Ucapan terima kasih
+ *
+ * Bentuknya ramping dan memanjang ke bawah seperti struk thermal sungguhan.
+ * Semua teks diperbesar supaya mudah dibaca dari jauh di layar kiosk.
+ * Countdown ada di bawah kartu.
  * ==========================================================================
  */
 
 const templateStruk = `
-<div data-screen="struk" style="display:none" data-action="lewatiStruk" class="h-full p-5 bg-[#d51f32] grid-noise flex items-center cursor-pointer">
+<div data-screen="struk" style="display:none" data-action="lewatiStruk" class="h-full overflow-y-auto scroll-clean cursor-pointer">
 
-  <div class="ticket-edge bg-[#f7f1e8] w-full rounded-sm p-6 shadow-2xl">
+  <div class="struk-wrap flex flex-col items-center justify-center gap-6 min-h-full px-5 py-4">
 
-    <!-- Header Struk -->
-    <div class="text-center border-b-2 border-dashed border-stone-300 pb-5">
-      <p class="font-black text-2xl text-[#d51f32]">
-        Kriuk<span class="text-[#f5bd27]">ology</span>
-      </p>
-      <p class="text-[10px] tracking-[.2em] mt-1">STRUK DIGITAL</p>
-      <p class="text-xs mt-4" data-bind="queueText"></p>
-      <h2 class="display font-black text-6xl text-[#d51f32] mt-1" data-bind="nomorAntrean"></h2>
+    <!-- ── KARTU STRUK ─────────────────────────────────────────── -->
+    <div class="struk-kartu struk-font w-full max-w-[380px] flex flex-col bg-white text-black rounded-2xl px-6 py-6 shadow-xl">
+
+      <!-- 1. Kop: logo + banner monokrom + alamat -->
+      <div class="struk-baris">
+        <div class="struk-kop flex items-center justify-center gap-2.5">
+          <img src="/assets/kriukology/logo1.webp" alt="Kriukology"
+            class="struk-logo h-14 w-14 object-contain" />
+          <img src="/assets/kriukology/banner_kriukology.webp" alt="Kriukology"
+            class="struk-logo h-8 max-w-[190px] object-contain" />
+        </div>
+        <p class="struk-alamat mt-2.5 text-center leading-snug" data-bind="strukAlamat"></p>
+      </div>
+
+      <!-- 2. Nomor Pesanan -->
+      <div class="struk-baris mt-6 text-center">
+        <p class="text-[15px] leading-tight" data-text="orderNumberLabel">Nomor Pesanan:</p>
+        <p class="struk-nomor text-[36px] font-bold leading-tight mt-1" data-bind="nomorAntrean"></p>
+      </div>
+
+      <!-- 3. Tipe pesanan + tanggal, lalu garis putus-putus -->
+      <div class="struk-baris mt-5">
+        <div class="flex items-baseline justify-between gap-3 pb-2">
+          <span class="struk-tipe text-[15px] font-bold" data-bind="strukTipe"></span>
+          <span class="struk-tanggal text-[15px]" data-bind="strukTanggal"></span>
+        </div>
+        <div class="struk-putus"></div>
+      </div>
+
+      <!-- 4. Rincian produk: jumlah | nama | harga satuan -->
+      <div class="struk-baris py-3" data-list="strukItems"></div>
+
+      <!-- 5. Total pembayaran + metode pembayaran (ditempel bawah kertas) -->
+      <div class="struk-baris mt-auto pt-6">
+        <p class="text-center text-[15px] pb-2" data-text="totalPayment">TOTAL PEMBAYARAN</p>
+        <div class="struk-putus mb-2"></div>
+        <p class="struk-total text-center text-[30px] font-bold" data-bind="totalHargaStruk"></p>
+        <p class="struk-metode text-center text-[15px] mt-1" data-bind="strukMetode"></p>
+      </div>
+
+      <!-- 6. Ucapan -->
+      <div class="struk-baris mt-6 text-center">
+        <p class="text-[15px] leading-snug" data-text="strukThanks">Terima Kasih Telah Berbelanja!</p>
+        <p class="struk-alamat mt-2 text-[14px] leading-snug" data-text="strukBranch">Kriukology Jalan Baru Citeureup</p>
+      </div>
+
     </div>
 
-    <!-- Daftar Item yang Dipesan -->
-    <div class="py-4 border-b-2 border-dashed border-stone-300 text-sm" data-list="strukItems"></div>
-
-    <!-- Ringkasan Pesanan -->
-    <div class="py-4 space-y-2 text-sm">
-      <div class="flex justify-between">
-        <span class="text-stone-500">Tipe Pesanan</span>
-        <b data-bind="deliveryInfo"></b>
-      </div>
-      <div class="flex justify-between">
-        <span class="text-stone-500">Status</span>
-        <b data-bind="statusPembayaran"></b>
-      </div>
-      <div class="flex justify-between text-lg">
-        <span class="font-black">TOTAL</span>
-        <span class="font-black text-[#d51f32]" data-bind="totalHargaStruk"></span>
-      </div>
-    </div>
-
-    <!-- Hitung Mundur Auto-Reset -->
-    <p class="text-center text-[10px] text-stone-400">
-      Kiosk kembali ke awal dalam
-      <span data-bind="detikStruk">10</span> detik
-    </p>
+    <!-- ── COUNTDOWN DI BAWAH STRUK ─────────────────────────────── -->
+    <p class="struk-countdown text-center text-[15px] leading-relaxed" data-bind="strukCountdown"></p>
 
   </div>
 

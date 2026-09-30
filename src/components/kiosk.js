@@ -43,7 +43,8 @@ class KioskApp {
     this.tampilKonfirmasiBayar = ''
     this.metodePembayaran = ''
     this.timerBuble = null
-    this.nomorAntrean = 'PD-001'
+    this.tanggalServer = null
+    this.nomorAntrean = 'KL-01'
     this.timerIdle = null
     this.timerStruk = null
     this.timerPoster = null
@@ -424,7 +425,9 @@ class KioskApp {
 
         const data = await res.json()
         if (res.ok && data.success) {
-          this.nomorAntrean = data.order_number || data.order?.order_number || 'PD-001'
+          this.nomorAntrean = data.order_number || data.order?.order_number || this.nomorAntrean
+          // Tanggal struk pakai waktu server, bukan jam perangkat kiosk
+          if (data.server_date) this.tanggalServer = data.server_date
         } else {
           console.warn('Checkout warning:', data.message)
         }
@@ -860,19 +863,21 @@ class KioskApp {
       </button>`
   }
 
-  /** Membuat HTML item di struk digital */
-  buatHTMLItemStruk(baris) {
+  /** Membuat HTML item di struk digital: jumlah | nama | harga satuan */
+  buatHTMLItemStruk(baris, indeks) {
     const detail = this.buatDetailKustomisasi(baris.kustomisasi)
     const barisDetail = detail
-      ? `<p class="text-[10px] text-stone-500 mt-1">${detail}</p>`
+      ? `<p class="text-[13px] leading-tight opacity-60 mt-0.5">${detail}</p>`
       : ''
+
     return `
-      <div class="mb-3">
-        <div class="flex justify-between font-bold">
-          <span>${baris.nama} × ${baris.jumlah}</span>
-          <span>${formatRupiah(baris.harga * baris.jumlah)}</span>
-        </div>
-        ${barisDetail}
+      <div class="struk-baris flex items-start gap-3 text-[15px] leading-snug py-1" style="--i:${indeks + 2}">
+        <span class="w-5 shrink-0 tabular-nums">${baris.jumlah}</span>
+        <span class="min-w-0 flex-1">
+          ${baris.nama}
+          ${barisDetail}
+        </span>
+        <span class="shrink-0 tabular-nums">${formatRupiah(baris.harga)}</span>
       </div>`
   }
 
@@ -1101,38 +1106,80 @@ class KioskApp {
     if (!el) return
     const t = (kunci) => this.terjemahkan(kunci)
 
-    const elAntrean = el.querySelector('[data-bind="queueText"]')
-    if (elAntrean) elAntrean.textContent = t('queue')
+    // Animasi cetak hanya sekali saat struk pertama dibuka. Setelah itu
+    // (mis. hitung mundur berubah tiap detik) baris tetap tampil diam.
+    const baruMuncul = this.layarBaruTadi
 
     const elNomor = el.querySelector('[data-bind="nomorAntrean"]')
     if (elNomor) elNomor.textContent = this.nomorAntrean
 
+    // Tipe pesanan mengikuti bahasa yang dipilih pelanggan
+    const elTipe = el.querySelector('[data-bind="strukTipe"]')
+    if (elTipe) elTipe.textContent = this.tipePesanan === 'take' ? t('take') : t('dine')
+
+    const elTanggal = el.querySelector('[data-bind="strukTanggal"]')
+    if (elTanggal) elTanggal.textContent = this.formatTanggalStruk()
+
+    const elAlamat = el.querySelector('[data-bind="strukAlamat"]')
+    if (elAlamat) elAlamat.textContent = t('strukAddress')
+
     const wadahItem = el.querySelector('[data-list="strukItems"]')
     if (wadahItem) {
       wadahItem.innerHTML = this.keranjang
-        .map(baris => this.buatHTMLItemStruk(baris))
+        .map((baris, indeks) => this.buatHTMLItemStruk(baris, indeks))
         .join('')
-    }
-
-    const elTipe = el.querySelector('[data-bind="deliveryInfo"]')
-    if (elTipe) {
-      elTipe.textContent = this.tipePesanan === 'take' ? t('take') : t('dine')
-    }
-
-    const elStatus = el.querySelector('[data-bind="statusPembayaran"]')
-    if (elStatus) {
-      elStatus.textContent = this.metodePembayaran === 'cash' ? 'PENDING' : 'PAID'
-      elStatus.classList.add('text-[#268c57]')
     }
 
     const elTotal = el.querySelector('[data-bind="totalHargaStruk"]')
     if (elTotal) elTotal.textContent = formatRupiah(this.dapatkanTotalHarga())
+
+    // Metode pembayaran mengikuti bahasa pelanggan
+    const elMetode = el.querySelector('[data-bind="strukMetode"]')
+    if (elMetode) {
+      const metode = daftarMetodePembayaran.find(m => m.id === this.metodePembayaran)
+      elMetode.textContent = metode ? metode.label.toUpperCase() : (this.metodePembayaran || '').toUpperCase()
+    }
+
+    // Beri urutan cetak (--i) ke tiap baris header/footer
+    if (baruMuncul) {
+      el.querySelectorAll('.struk-baris:not([style*="--i"])').forEach((baris, i) => {
+        baris.style.setProperty('--i', String(i + this.keranjang.length + 2))
+      })
+    } else {
+      // Sudah tampil sebelumnya — matikan animasi supaya tidak mengulang
+      el.querySelectorAll('.struk-baris').forEach(baris => baris.classList.add('struk-baris-off'))
+    }
+
+    this.perbaruiDetikStruk()
+  }
+
+  /**
+   * Tanggal struk memakai waktu SERVER Laravel, bukan jam perangkat kiosk.
+   * Fallback ke jam perangkat kalau server tidak mengirim (mis. offline).
+   */
+  formatTanggalStruk() {
+    const t = (kunci) => this.terjemahkan(kunci)
+    const tanggal = this.tanggalServer ? new Date(this.tanggalServer) : new Date()
+
+    try {
+      return new Intl.DateTimeFormat(this.bahasa === 'en' ? 'en-GB' : 'id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }).format(tanggal)
+    } catch {
+      return tanggal.toLocaleDateString()
+    }
   }
 
   /** Memperbarui tampilan detik countdown struk */
   perbaruiDetikStruk() {
     const el = document.querySelector('[data-bind="detikStruk"]')
     if (el) el.textContent = this.detikStruk
+
+    const t = (kunci) => this.terjemahkan(kunci)
+    const elHitung = document.querySelector('[data-bind="strukCountdown"]')
+    if (elHitung) elHitung.textContent = t('strukCountdown').replace('{n}', String(Math.max(this.detikStruk, 0)))
   }
 }
 

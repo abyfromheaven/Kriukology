@@ -60,10 +60,12 @@ class OrderController extends Controller
                     ];
                 }
 
-                // Generate nomor antrean unik (PD-001, PD-002, ...)
+                // Generate nomor pesanan berurutan (KL-01, KL-02, ...).
+                // Pakai id pesanan terakhir + 1 supaya urutan selalu sama dengan
+                // urutan pesanan masuk, bukan acak.
                 $lastOrder = Order::orderBy('id', 'desc')->first();
                 $nextNumber = $lastOrder ? $lastOrder->id + 1 : 1;
-                $orderNumber = 'PD-' . str_pad($nextNumber % 1000 ?: 1000, 3, '0', STR_PAD_LEFT);
+                $orderNumber = 'KL-' . str_pad((string) $nextNumber, 2, '0', STR_PAD_LEFT);
 
                 // Simpan pesanan + detail dalam satu transaksi
                 $order = Order::create([
@@ -85,6 +87,9 @@ class OrderController extends Controller
                 'success'      => true,
                 'order_number' => $order->order_number,
                 'order'        => $order->only(['id', 'order_number', 'total_price', 'status', 'payment_method']),
+                // Tanggal/waktu server — struk cetak memakai ini, bukan jam
+                // perangkat kiosk (bisa saja tidak sinkron).
+                'server_date'  => now()->toIso8601String(),
             ]);
         } catch (\Exception $e) {
             return response()->json([

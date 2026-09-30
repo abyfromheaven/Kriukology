@@ -234,6 +234,73 @@ button:focus-visible { outline: 3px solid #f5bd27; outline-offset: 3px; }
   transform: scale(1.06);
 }
 
+/* ── Struk Digital ─────────────────────────────────────────────────── */
+/* Font monospace supaya terbaca strukThermal sungguhan */
+.struk-font {
+  font-family: 'Courier New', Courier, 'Liberation Mono', monospace;
+}
+
+/* Kop monokrom: logo & banner jadi hitam-putih */
+.struk-logo {
+  filter: grayscale(1) contrast(1.25);
+}
+
+.struk-kartu {
+  border: 1px solid #000;
+  /* Memanjang ke bawah seperti struk thermal sungguhan — bagian total
+     terdorong ke bawah karena memakai mt-auto. */
+  min-height: 700px;
+}
+
+.struk-alamat {
+  font-size: 13px;
+}
+
+.struk-nomor {
+  letter-spacing: .04em;
+}
+
+.struk-tipe {
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.struk-total {
+  letter-spacing: .02em;
+}
+
+/* Garis putus-putus seperti struk thermal */
+.struk-putus {
+  border-top: 1px dashed #000;
+}
+
+/* Hitung mundur di bawah struk — diberi renggang dari kertas struk */
+.struk-countdown {
+  color: #57534e;
+  min-height: 1.4em;
+  max-width: 90%;
+}
+
+/* Animasi cetak: tiap baris keluar dari atas satu per satu.
+   Delay lewat --i yang di-set inline per baris. */
+.struk-baris {
+  opacity: 0;
+  animation: struk-cetak .26s ease-out forwards;
+  animation-delay: calc(var(--i, 0) * .13s);
+}
+
+@keyframes struk-cetak {
+  from { opacity: 0; transform: translateY(-7px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Varian tanpa animasi — dipakai kalau struk di-render ulang
+   (mis. hitung mundur berubah tiap detik) */
+.struk-baris-off {
+  opacity: 1;
+  animation: none;
+}
+
 /* ── Transisi Antar Layar ──────────────────────────────────────────── */
 /* Dipicu sekali setiap layar berganti (kelas dipasang di render()).
    Fade + zoom ringan supaya perpindahan tidak terasa terpotong. */
