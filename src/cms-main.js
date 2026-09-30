@@ -53,7 +53,7 @@ document.querySelector('#cms-app').innerHTML = `
   <div class="cms-page">
     <div class="cms-frame">
       <header class="cms-header" aria-label="Kriukology">
-        <div class="stripe-band" aria-hidden="true"></div>
+      <div class="stripe-band" aria-hidden="true"></div>
         <div class="brand-space">
           <img class="brand-logo" src="/assets/kriukology/logo1.webp" alt="Kriukology" />
           <img class="brand-banner" src="/assets/kriukology/banner_kriukology.webp" alt="" />
@@ -68,12 +68,13 @@ document.querySelector('#cms-app').innerHTML = `
           <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
           <input id="search" type="search" placeholder="Cari Produk..." autocomplete="off" />
         </label>
-        <label class="category-filter">
-          <select id="category-filter" aria-label="Filter kategori">
-            <option value="">Kategori</option>
-          </select>
-          <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
-        </label>
+        <div class="category-filter-wrap">
+          <button class="category-filter" id="category-filter-button" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span id="category-filter-label">Semua</span>
+            <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+          </button>
+          <div class="category-menu" id="category-menu" role="listbox" aria-label="Filter kategori" hidden></div>
+        </div>
         <button class="add-product-button" id="add-product" type="button">
           Tambah Produk <i class="fa-solid fa-plus" aria-hidden="true"></i>
         </button>
@@ -87,7 +88,9 @@ document.querySelector('#cms-app').innerHTML = `
 `
 
 const searchInput = document.querySelector('#search')
-const categoryFilter = document.querySelector('#category-filter')
+const categoryFilterButton = document.querySelector('#category-filter-button')
+const categoryFilterLabel = document.querySelector('#category-filter-label')
+const categoryMenu = document.querySelector('#category-menu')
 const grid = document.querySelector('#product-grid')
 const panelHost = document.querySelector('#panel-host')
 const alertHost = document.querySelector('#alert-host')
@@ -97,16 +100,17 @@ function allCategories() {
 }
 
 function renderCategoryFilter() {
-  const selected = categoryFilter.value
-  categoryFilter.innerHTML = '<option value="">Kategori</option>' + allCategories()
-    .map(value => `<option value="${escapeHtml(value)}">${escapeHtml(getCategoryLabel(value))}</option>`)
-    .join('')
-  categoryFilter.value = selected
+  const selected = categoryFilterButton.dataset.value || ''
+  categoryFilterLabel.textContent = selected ? getCategoryLabel(selected) : 'Semua'
+  categoryMenu.innerHTML = [
+    `<button type="button" class="category-option${selected ? '' : ' selected'}" role="option" aria-selected="${!selected}" data-category="">Semua</button>`,
+    ...allCategories().map(value => `<button type="button" class="category-option${selected === value ? ' selected' : ''}" role="option" aria-selected="${selected === value}" data-category="${escapeHtml(value)}">${escapeHtml(getCategoryLabel(value))}</button>`),
+  ].join('')
 }
 
 function visibleProducts() {
   const query = searchInput.value.trim().toLocaleLowerCase('id')
-  const category = categoryFilter.value
+  const category = categoryFilterButton.dataset.value || ''
   return products.filter(product =>
     product.name.toLocaleLowerCase('id').includes(query) && (!category || product.category === category))
 }
@@ -353,7 +357,24 @@ async function readImage(file) {
 renderGrid()
 
 searchInput.addEventListener('input', renderGrid)
-categoryFilter.addEventListener('change', renderGrid)
+categoryFilterButton.addEventListener('click', () => {
+  const isOpen = !categoryMenu.hidden
+  categoryMenu.hidden = isOpen
+  categoryFilterButton.setAttribute('aria-expanded', String(!isOpen))
+})
+categoryMenu.addEventListener('click', event => {
+  const option = event.target.closest('[data-category]')
+  if (!option) return
+  categoryFilterButton.dataset.value = option.dataset.category
+  categoryMenu.hidden = true
+  categoryFilterButton.setAttribute('aria-expanded', 'false')
+  renderGrid()
+})
+document.addEventListener('click', event => {
+  if (event.target.closest('.category-filter-wrap')) return
+  categoryMenu.hidden = true
+  categoryFilterButton.setAttribute('aria-expanded', 'false')
+})
 document.querySelector('#add-product').addEventListener('click', () => requestPanel({ mode: 'add' }))
 
 grid.addEventListener('click', event => {

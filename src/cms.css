@@ -159,3 +159,128 @@ button { cursor: pointer; }
   .confirm-actions { gap: 14px; }
   .confirm-actions button { height: 52px; font-size: 21px; }
 }
+
+/* Revisi visual halaman CMS */
+.cms-page { padding: 0; }
+.cms-frame { min-height: 100vh; padding: 0 24px 28px; border: 0; border-radius: 0; }
+.cms-header {
+  position: relative;
+  left: 50%;
+  width: 100vw;
+  height: 102px;
+  margin-left: -50vw;
+  display: block;
+}
+.cms-header .stripe-band {
+  position: absolute;
+  top: 0;
+  width: calc((100vw - min(520px, 54vw)) / 2);
+  height: 76px;
+  background-size: auto 76px;
+}
+.cms-header .stripe-band:first-child { left: 0; }
+.cms-header .stripe-band:last-child { right: 0; }
+.brand-space {
+  position: absolute;
+  z-index: 1;
+  top: 4px;
+  left: 50%;
+  width: min(520px, 54vw);
+  height: 88px;
+  margin: 0;
+  transform: translateX(-50%);
+  gap: 12px;
+}
+.brand-logo { width: 155px; height: 70px; }
+.brand-banner { width: 285px; height: 78px; }
+.cms-frame h1 { margin: 0 0 20px; text-align: center; }
+.category-filter-wrap { position: relative; min-width: 0; }
+.category-filter {
+  width: 100%;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 14px;
+  border: 2px solid #242424;
+  border-radius: 11px;
+  background: #fff;
+  color: #252525;
+  font-size: 18px;
+}
+.category-filter i { position: static; font-size: 13px; }
+.category-menu {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 7px);
+  left: 0;
+  right: 0;
+  max-height: min(320px, 55vh);
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid #dedede;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 7px 20px #0002;
+}
+.category-menu[hidden] { display: none; }
+.category-option {
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #252525;
+  text-align: center;
+  font-size: 16px;
+}
+.category-option:hover, .category-option.selected { background: #f5e8e8; }
+.product-card { height: auto; min-height: 0; aspect-ratio: 2 / 3; }
+.product-image { height: 42%; min-height: 0; flex: 0 0 42%; }
+.cms-panel {
+  top: 50%;
+  right: 18px;
+  width: min(520px, calc(66.667dvh - 32px), calc(100vw - 24px));
+  height: auto;
+  max-height: calc(100dvh - 48px);
+  aspect-ratio: 2 / 3;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 24px;
+}
+.cms-panel.closing { animation: slide-out .24s ease-in both; }
+@keyframes slide-in { from { transform: translate(110%, -50%); } to { transform: translate(0, -50%); } }
+@keyframes slide-out { to { transform: translate(110%, -50%); } }
+
+@media (max-width: 800px) {
+  .cms-header { height: 82px; }
+  .cms-header .stripe-band { width: calc((100vw - min(450px, 60vw)) / 2); height: 60px; background-size: auto 60px; }
+  .brand-space { width: min(450px, 60vw); height: 74px; top: 2px; gap: 8px; }
+  .brand-logo { width: 125px; height: 62px; }
+  .brand-banner { width: 245px; height: 68px; }
+}
+@media (max-width: 480px) {
+  .cms-page { padding: 0; }
+  .cms-frame { min-height: 100vh; padding: 0 12px 18px; border: 0; border-radius: 0; }
+  .cms-header { height: 66px; }
+  .cms-header .stripe-band { width: calc((100vw - min(270px, 62vw)) / 2); height: 48px; background-size: auto 48px; }
+  .brand-space { width: min(270px, 62vw); height: 60px; top: 1px; gap: 3px; }
+  .brand-logo { width: 82px; height: 46px; }
+  .brand-banner { width: 165px; height: 48px; }
+  .cms-frame h1 { margin: 0 0 14px; }
+  .cms-panel { right: 12px; width: min(520px, calc(66.667dvh - 32px), calc(100vw - 24px)); border-radius: 20px; }
+  .cms-panel .panel-content { padding: 8px 20px 14px; }
+  .cms-panel .image-picker { height: min(22vh, 130px); margin: 6px auto 2px; }
+  .cms-panel .placeholder-picture { font-size: 68px; }
+  .cms-panel .category-field { margin-bottom: 6px; }
+  .cms-panel .category-field input { font-size: 22px; }
+  .cms-panel .name-field { margin-bottom: 12px; }
+  .cms-panel .name-field input, .cms-panel .price-field input { font-size: clamp(28px, 7vw, 40px); }
+  .cms-panel .price-field > label, .cms-panel .stock-field > label { font-size: 26px; }
+  .cms-panel .price-field .editable-field { margin-bottom: 10px; }
+  .cms-panel .stock-field { margin-bottom: 12px; }
+  .cms-panel .stock-field > label { margin-bottom: 8px; }
+  .cms-panel .stock-stepper { gap: 12px; }
+  .cms-panel .stock-stepper input { font-size: 42px; }
+  .cms-panel .stock-step { flex-basis: 42px; width: 42px; height: 42px; }
+  .cms-panel .delete-button, .cms-panel .save-button { min-height: 44px; }
+}
