@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'api/*',
         ]);
+
+        // Tidak ada route bernama "login" di project ini, jadi middleware auth
+        // harus diberi tahu arah redirect-nya. Tanpa ini, menghubungi /cms
+        // tanpa login menghasilkan error 500, bukan redirect ke halaman login.
+        $middleware->redirectGuestsTo('/cms/login');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

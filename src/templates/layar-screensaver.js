@@ -14,13 +14,16 @@
  * ==========================================================================
  */
 
-const daftarPoster = [
+// Poster dikirim dari server (dikelola di CMS > Kelola Poster). Daftar di
+// bawah hanya cadangan supaya screensaver tidak kosong saat server belum
+// menjawab atau belum ada poster sama sekali.
+const POSTER_CADANGAN = [
   '/assets/poster/poster1.webp',
   '/assets/poster/poster2.webp',
   '/assets/poster/poster3.webp',
 ]
 
-const htmlPoster = daftarPoster.map((src, i) =>
+const htmlPoster = POSTER_CADANGAN.map((src, i) =>
   `<img src="${src}" alt="Promosi Kriukology" class="poster-slide ${i === 0 ? 'aktif' : ''}">`
 ).join('')
 
@@ -28,7 +31,7 @@ const templateLayarScreensaver = `
 <div data-screen="screensaver" class="h-full bg-black relative overflow-hidden" data-action="mulaiPesan">
 
   <!-- Poster rotasi -->
-  <div class="absolute inset-0">
+  <div class="absolute inset-0" data-bind="posterWadah">
     ${htmlPoster}
   </div>
 

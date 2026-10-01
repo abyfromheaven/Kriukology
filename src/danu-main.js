@@ -8,11 +8,10 @@
  * ==========================================================================
  */
 
-import './style.css'
+import './danu.css'
 import templateLayarDanu from './templates/layar-danu.js'
 import formatRupiah from './utils/format.js'
 import mainkanSuara, { mainkanFileSuara } from './utils/audio.js'
-import { kirimSinyalPembayaranSukses } from './utils/paymentChannel.js'
 
 class DanuApp {
   constructor() {
@@ -26,6 +25,8 @@ class DanuApp {
     if (rawAmount) {
       this.tagihanKiosk = Number(rawAmount) || 0
     }
+    // Token pesanan dari QR Code kiosk: ?amount=15000&token=xxxx
+    this.tokenPesanan = params.get('token') || ''
 
     this.renderInitialHTML()
     this.bindPeristiwa()
@@ -36,8 +37,6 @@ class DanuApp {
     const appEl = document.querySelector('#app-danu')
     if (appEl) {
       appEl.innerHTML = templateLayarDanu
-      const screenEl = appEl.querySelector('[data-screen="danu"]')
-      if (screenEl) screenEl.style.display = ''
     }
   }
 
@@ -100,11 +99,8 @@ class DanuApp {
         // Nominal sesuai / cukup -> Eksekusi Transaksi Berhasil
         // Sound sukses khas Danu (file lokal, bukan suara kiosk)
         mainkanFileSuara('/assets/sound/dana.mp3')
-        kirimSinyalPembayaranSukses({
-          total: numEntered,
-          tagihan: this.tagihanKiosk,
-          timestamp: Date.now()
-        })
+        // Laporkan ke server, supaya kiosk di perangkat lain ikut tahu
+        this.laporPembayaran(numEntered)
 
         this.view = 'sukses'
         this.render()
@@ -115,6 +111,9 @@ class DanuApp {
         mainkanSuara()
         this.inputDanu = ''
         this.view = 'form'
+        // Bersihkan catatan peringatan dari transaksi sebelumnya
+        const catatan = document.querySelector('[data-bind="danuSuksesCatatan"]')
+        if (catatan) { catatan.textContent = ''; catatan.classList.add('hidden') }
         this.render()
         break
       }
@@ -122,6 +121,45 @@ class DanuApp {
       default:
         break
     }
+  }
+
+  /**
+   * Laporkan pembayaran ke server.
+   * Lewat server (bukan antar-tab browser) karena halaman Danu dibuka di HP,
+   * sedangkan kiosk jalan di perangkat lain.
+   */
+  async laporPembayaran(jumlah) {
+    if (!this.tokenPesanan) {
+      // Jangan ditelan diam-diam: dulu return di sini membuat pembayaran hilang
+      // tanpa jejak dan kiosk menunggu selamanya. Tampilkan errornya.
+      console.error('Token pesanan tidak ada — buka halaman ini lewat QR Code kiosk.')
+      this.tampilkanPeringatan('Halaman ini harus dibuka dari QR Code pada kiosk. Pembayaran tidak terkirim.')
+      return
+    }
+
+    try {
+      const res = await fetch('/api/qris/pay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ token: this.tokenPesanan, amount: Number(jumlah) })
+      })
+      const hasil = await res.json()
+      if (!res.ok || !hasil.success) {
+        console.error('Server menolak pembayaran:', hasil)
+        this.tampilkanPeringatan('Pembayaran gagal terkirim ke kiosk. Silakan coba lagi.')
+      }
+    } catch (error) {
+      console.error('Gagal melaporkan pembayaran ke server:', error)
+      this.tampilkanPeringatan('Tidak ada koneksi ke kiosk. Pembayaran belum terkirim.')
+    }
+  }
+
+  /** Tampilkan pesan singkat di layar sukses kalau laporan ke server bermasalah */
+  tampilkanPeringatan(pesan) {
+    let el = document.querySelector('[data-bind="danuSuksesCatatan"]')
+    if (!el) return
+    el.textContent = pesan
+    el.classList.remove('hidden')
   }
 
   render() {

@@ -28,6 +28,14 @@ return [
     ],
     'exists' => ':attribute yang dipilih tidak valid.',
     'image' => ':attribute harus berupa gambar.',
+    'size' => [
+        'string' => ':attribute harus berisi :size karakter.',
+        'numeric' => ':attribute harus bernilai :size.',
+        'file' => ':attribute harus berukuran :size kilobyte.',
+    ],
+    'array' => ':attribute harus berupa daftar.',
+    'in' => ':attribute yang dipilih tidak valid.',
+    'regex' => 'Format :attribute tidak valid.',
 
     'attributes' => [
         'name' => 'nama produk',
@@ -40,5 +48,7 @@ return [
         'icon' => 'icon',
         'emoji' => 'emoji',
         'sort_order' => 'urutan',
+        'token' => 'token pesanan',
+        'items' => 'item pesanan',
     ],
 ];

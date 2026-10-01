@@ -14,18 +14,15 @@ import daftarMetodePembayaran from '../data/pembayaran.js'
 import kamus from '../data/kamus.js'
 import formatRupiah from '../utils/format.js'
 import mainkanSuara, { mainkanSuaraCash } from '../utils/audio.js'
-import { kirimSinyalPembayaranSukses, dengarkanSinyalPembayaranSukses } from '../utils/paymentChannel.js'
 
 // ── KONFIGURASI QRIS ────────────────────────────────────────────────
-// Path tujuan QR Code pada layar QRIS.
-// Nilai relatif (diawali "/") otomatis dibuat absolut memakai
-// protocol + IP/host + port yang sedang menjalankan website,
-// jadi tidak perlu ganti config saat pindah device/server.
-// Tulis URL lengkap (https://...) bila tujuannya di luar server ini.
-const QRIS_LINK_DASAR = '/danu.html'
-// true  → QR berisi <link>?amount=<total belanja>
-// false → QR berisi <link> saja tanpa nominal
-const QRIS_SERTAKAN_NOMINAL = true
+// Fallback kalau server tidak dapat dihubungi (mode offline). Nilai
+// sesungguhnya diambil dari GET /api/qris/info saat start.
+const QRIS_INFO_DEFAULT = {
+  danuUrl: '/danu.html',
+  pollMs: 1500,
+  timeoutS: 180,
+}
 
 class KioskApp {
   constructor() {
@@ -33,10 +30,12 @@ class KioskApp {
     this.langkah = 'screensaver'
     this.layarAktif = null
     this.layarBaruTadi = false
+    this.kategoriAktifRendered = null
     this.bahasa = 'id'
     this.tipePesanan = ''
     this.kategoriAktif = null
     this.daftarKategori = []
+    this.daftarMedia = []
     this.daftarMenu = []
     this.keranjang = []
     this.tampilKonfirmasiBatal = false
@@ -56,13 +55,17 @@ class KioskApp {
     this.detikAlertIdle = 15
 
     // ── State QRIS ─────────────────────────────────────────────────────
-    this.statusQris = 'menunggu' // 'menunggu' | 'sukses'
-    this.timerQrisSukses = null
+    this.statusQris = 'menunggu' // 'menunggu' | 'sukses' | 'timeout'
     this.qrInstance = null
     this.urlQrisTerakhir = ''
+    this.tokenQris = null           // token unik per sesi QRIS
+    this.timerQrisPolling = null     // interval cek status ke server
+    this.timerQrisHitungMundur = null // interval countdown batas waktu
+    this.detikQrisSisa = 0
+    this.qrisInfo = { ...QRIS_INFO_DEFAULT }
 
     this.muatMenuFromAPI()
-    this.inisialisasiListenerPembayaran()
+    this.muatInfoQris()
     this.resetWaktuIdle()
     this.bindPeristiwa()
     this.render()
@@ -82,6 +85,8 @@ class KioskApp {
         emoji: kat.emoji || '🍗',
         label: { id: kat.label_id, en: kat.label_en }
       }))
+
+      this.daftarMedia = (data.posters || []).filter(p => p.image)
 
       this.daftarMenu = (data.products || []).map(item => ({
         id: item.id,
@@ -106,31 +111,105 @@ class KioskApp {
     }
   }
 
-  /** Inisialisasi listener sinyal pembayaran inter-tab (BroadcastChannel / LocalStorage) */
-  inisialisasiListenerPembayaran() {
-    dengarkanSinyalPembayaranSukses((data) => {
-      if (this.langkah === 'qris' && this.statusQris === 'menunggu') {
-        const totalHarga = this.dapatkanTotalHarga() || 15000
-        const dibayar = Number(data && data.total) || 0
+  /**
+   * Ambil konfigurasi QRIS dari server: alamat halaman Danu, kecepatan cek,
+   * dan batas waktu menunggu. Alamat Danu disusun server memakai IP jaringan
+   * supaya HP bisa membukanya (localhost tidak bisa dipakai di HP).
+   */
+  async muatInfoQris() {
+    try {
+      const response = await fetch('/api/qris/info')
+      if (!response.ok) return
+      const data = await response.json()
 
-        // Pengecekan apakah jumlah pembayaran sesuai/cukup dengan total tagihan
-        if (dibayar > 0 && dibayar < totalHarga) {
-          const txtStatus = document.querySelector('[data-bind="qrisStatusText"]')
-          if (txtStatus) {
-            txtStatus.textContent = `Pembayaran Kurang (${formatRupiah(dibayar)} < ${formatRupiah(totalHarga)})`
-          }
-          return
-        }
-
-        this.statusQris = 'sukses'
-        this.render()
-
-        clearTimeout(this.timerQrisSukses)
-        this.timerQrisSukses = setTimeout(() => {
-          this.selesaikanPesanan()
-        }, 2200)
+      this.qrisInfo = {
+        danuUrl: data.danu_url || QRIS_INFO_DEFAULT.danuUrl,
+        pollMs: Number(data.poll_ms) || QRIS_INFO_DEFAULT.pollMs,
+        timeoutS: Number(data.timeout_s) || QRIS_INFO_DEFAULT.timeoutS,
       }
-    })
+    } catch (error) {
+      console.error('Gagal mengambil konfigurasi QRIS:', error)
+    }
+  }
+
+  /**
+   * Mulai menunggu pembayaran QRIS: cek status ke server tiap pollMs, plus
+   * countdown batas waktu. Dipanggil tiap kali layar QRIS dibuka.
+   */
+  mulaiTungguQris() {
+    this.stopTungguQris()
+    this.statusQris = 'menunggu'
+    this.detikQrisSisa = this.qrisInfo.timeoutS
+    this.perbaruiCountdownQris()
+
+    if (this.tokenQris) {
+      this.timerQrisPolling = setInterval(() => this.cekStatusQris(), this.qrisInfo.pollMs)
+    }
+    this.timerQrisHitungMundur = setInterval(() => {
+      this.detikQrisSisa--
+      this.perbaruiCountdownQris()
+
+      if (this.detikQrisSisa <= 0) {
+        this.stopTungguQris()
+        this.statusQris = 'timeout'
+        this.tampilkanBuble('Waktu pembayaran QRIS habis. Silakan pilih metode pembayaran lain.', 4000)
+        this.langkah = 'pembayaran'
+        this.render()
+      }
+    }, 1000)
+  }
+
+  /** Berhentikan semua timer QRIS (polling + countdown) */
+  stopTungguQris() {
+    clearInterval(this.timerQrisPolling)
+    clearInterval(this.timerQrisHitungMundur)
+    this.timerQrisPolling = null
+    this.timerQrisHitungMundur = null
+  }
+
+  /** Tanya server: sudah ada pembayaran untuk token sesi ini? */
+  async cekStatusQris() {
+    if (this.langkah !== 'qris' || this.statusQris !== 'menunggu' || !this.tokenQris) return
+
+    try {
+      const response = await fetch(`/api/qris/status/${this.tokenQris}`)
+      if (!response.ok) return
+
+      const data = await response.json()
+      if (!data.paid) return
+
+      const totalHarga = this.dapatkanTotalHarga()
+      const dibayar = Number(data.amount) || 0
+
+      // nominally kurang → tetap tunggu, tampilkan penjelasannya
+      if (dibayar > 0 && dibayar < totalHarga) {
+        const txtStatus = document.querySelector('[data-bind="qrisStatusText"]')
+        if (txtStatus) {
+          txtStatus.textContent = `Pembayaran Kurang (${formatRupiah(dibayar)} < ${formatRupiah(totalHarga)})`
+        }
+        return
+      }
+
+      // Pembayaran sudah masuk -> langsung proses. TIDAK lewat layar Metode
+      // Pembayaran: dari layar QRIS langsung loncat ke Layar Sukses.
+      this.stopTungguQris()
+      this.statusQris = 'sukses'
+      this.render()
+      this.selesaikanPesanan()
+    } catch (error) {
+      // Server sempat tidak terjangkau — coba lagi di cek berikutnya
+      console.warn('Gagal cek status QRIS:', error)
+    }
+  }
+
+  /** Perbarui teks countdown di layar QRIS */
+  perbaruiCountdownQris() {
+    const el = document.querySelector('[data-bind="qrisCountdown"]')
+    if (!el) return
+    const sisa = Math.max(this.detikQrisSisa, 0)
+    const menit = Math.floor(sisa / 60)
+    const detik = String(sisa % 60).padStart(2, '0')
+    el.textContent = `${menit}:${detik}`
   }
 
   // ── PROPERTI TURUNAN (Computed) ─────────────────────────────────────
@@ -150,22 +229,17 @@ class KioskApp {
     return this.keranjang.reduce((jumlah, baris) => jumlah + baris.jumlah, 0)
   }
 
-  /** Asal server: protocol + IP/host + port yang menjalankan website */
-  dapatkanAsalServer() {
-    const { protocol, origin } = window.location
-    return protocol === 'http:' || protocol === 'https:' ? origin : ''
-  }
-
-  /** Membangun URL tujuan scan QRIS mengikuti IP/host server yang berjalan */
+  /**
+   * Bangun URL tujuan scan QRIS.
+   * Alamat dasarnya datang dari server (IP jaringan, bukan localhost), lalu
+   * ditambahkan ?amount=<tagihan> &token=<token unik sesi ini>.
+   */
   dapatkanUrlQris(total) {
-    const dasar = /^https?:\/\//i.test(QRIS_LINK_DASAR)
-      ? QRIS_LINK_DASAR
-      : `${this.dapatkanAsalServer()}${QRIS_LINK_DASAR.startsWith('/') ? '' : '/'}${QRIS_LINK_DASAR}`
-
-    if (!QRIS_SERTAKAN_NOMINAL) return dasar
+    const dasar = this.qrisInfo.danuUrl
+    if (!dasar) return '/danu.html'
 
     const pemisah = dasar.includes('?') ? '&' : '?'
-    return `${dasar}${pemisah}amount=${total}`
+    return `${dasar}${pemisah}amount=${total}&token=${this.tokenQris || ''}`
   }
 
   // ── METODE INTI ─────────────────────────────────────────────────────
@@ -181,9 +255,37 @@ class KioskApp {
     this.navigasiKe('preferensi')
   }
 
+  /**
+   * Gambar ulang media screensaver (gambar & video) dari data server.
+   * Dipanggil saat start dan setiap kali menu di-muat ulang, supaya media
+   * yang baru diunggah manajer langsung tampil tanpa refresh halaman.
+   */
+  renderPosterScreensaver() {
+    const wadah = document.querySelector('[data-bind="posterWadah"]')
+    if (!wadah || !this.daftarMedia.length) return   // kosong = pakai fallback di template
+
+    wadah.innerHTML = this.daftarMedia
+      .map((item, i) => item.type === 'video'
+        // Video: autoplay + loop + muted (browser hanya izinkan autoplay tanpa suara)
+        ? `<video src="${item.image}" class="poster-slide${i === 0 ? ' aktif' : ''}" autoplay muted loop playsinline preload="auto"></video>`
+        : `<img src="${item.image}" alt="Promosi Kriukology" class="poster-slide${i === 0 ? ' aktif' : ''}">`)
+      .join('')
+  }
+
+  /** Pause semua video screensaver (dipakai saat layar ditinggalkan) */
+  hentikanVideoScreensaver() {
+    document.querySelectorAll('[data-bind="posterWadah"] video').forEach(v => v.pause())
+  }
+
   /** Memulai rotasi poster screensaver dengan efek sliding */
   mulaiRotasiPoster() {
     clearInterval(this.timerPoster)
+    this.renderPosterScreensaver()
+    // Playwright/HP bisa memblokir autoplay -> play() mengembalikan promise
+    document.querySelectorAll('[data-bind="posterWadah"] video').forEach(v => {
+      const hasil = v.play()
+      if (hasil && typeof hasil.catch === 'function') hasil.catch(() => {})
+    })
     let indeksSekarang = 0
     const semuaPoster = document.querySelectorAll('.poster-slide')
     if (semuaPoster.length <= 1) return
@@ -212,9 +314,46 @@ class KioskApp {
     if (langkahBerikutnya === 'preferensi') {
       this.tipePesanan = ''
     }
+
+    // Berhenti menunggu QRIS begitu pelanggan meninggalkan layar QRIS
+    if (this.langkah === 'qris' && langkahBerikutnya !== 'qris') {
+      this.stopTungguQris()
+    }
+
+    // Video screensaver dihentikan saat pelanggan mulai pesan, supaya tidak
+    // tetap berjalan di belakang layar.
+    if (this.langkah === 'screensaver' && langkahBerikutnya !== 'screensaver') {
+      this.hentikanVideoScreensaver()
+    }
+
+    // Sesi QRIS baru HARUS dibuat SEBELUM render(). renderQris() menggambar
+    // QR dari tokenQris — kalau token dibuat setelah render, QR berisi token
+    // kosong (sesi pertama) atau token sesi lama, dan pembayaran dari HP tidak
+    // pernah sampai ke server.
+    if (langkahBerikutnya === 'qris') {
+      this.mulaiSesiQris()
+    }
+
     this.langkah = langkahBerikutnya
     this.resetWaktuIdle()
     this.render()
+  }
+
+  /**
+   * Sesi QRIS baru: token unik supaya pembayaran tidak ketuker dengan
+   * pesanan lain yang nilainya sama, lalu mulai polling & countdown.
+   */
+  mulaiSesiQris() {
+    this.tokenQris = this.buatTokenQris()
+    this.urlQrisTerakhir = ''   // paksa QR di-render ulang dengan token baru
+    this.mulaiTungguQris()
+  }
+
+  /** Token acak 32 karakter hex - mustahil ditebak, aman dari pembayaran palsu */
+  buatTokenQris() {
+    const array = new Uint8Array(16)
+    crypto.getRandomValues(array)
+    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
   }
 
   /** Durasi idle (detik) yang sadar-konteks sesuai layar aktif */
@@ -236,7 +375,9 @@ class KioskApp {
       this.perbaruiAlertIdle()
     }
 
-    const layarTanpaIdle = ['screensaver', 'sukses', 'struk']
+    // 'qris' sengaja ikut masuk: pelanggan sedang bayar di HP, jadi diamnya
+    // bukan abandonment. Kalau timer idle bunyi di tengah, pesanan terhapus.
+    const layarTanpaIdle = ['screensaver', 'sukses', 'struk', 'qris']
     if (layarTanpaIdle.includes(this.langkah)) return
 
     this.timerIdle = setTimeout(
@@ -477,8 +618,8 @@ class KioskApp {
   aturUlang() {
     clearTimeout(this.timerIdle)
     clearInterval(this.timerStruk)
-    clearTimeout(this.timerQrisSukses)
     clearInterval(this.timerAlertIdle)
+    this.stopTungguQris()
     clearTimeout(this.timerBuble)
     this.alertIdleAktif = false
     this.perbaruiAlertIdle()
@@ -489,6 +630,7 @@ class KioskApp {
     this.tampilKonfirmasiBayar = ''
     this.metodePembayaran = ''
     this.statusQris = 'menunggu'
+    this.tokenQris = null
     this.render()
   }
 
@@ -511,7 +653,7 @@ class KioskApp {
   /** Melewati timer struk: langsung ke Layar Preferensi (tanpa Screensaver) */
   lewatiStruk() {
     clearInterval(this.timerStruk)
-    clearTimeout(this.timerQrisSukses)
+    this.stopTungguQris()
     clearInterval(this.timerAlertIdle)
     this.alertIdleAktif = false
     this.perbaruiAlertIdle()
@@ -627,7 +769,7 @@ class KioskApp {
         this.metodePembayaran = metode
         mainkanSuara()
         if (metode === 'qris') {
-          this.statusQris = 'menunggu'
+          // navigasiKe('qris') akan memulai sesi QRIS baru (token + polling)
           this.navigasiKe('qris')
         } else {
           this.render()
@@ -720,9 +862,8 @@ class KioskApp {
       : 'text-[#231f20] font-semibold opacity-85 hover:opacity-100'
     return `
       <button data-action="setKategori:${kategori.id}" aria-current="${aktif ? 'true' : 'false'}"
-        class="kategori-tab w-full px-2 py-2 flex items-center gap-2.5 text-left rounded-lg ${aktif ? 'is-aktif' : 'hover:bg-stone-50'}">
-        <i class="${kategori.icon} text-[#d51f32] text-base shrink-0 w-5 text-center"></i>
-        <span class="text-[11px] leading-tight transition-transform ${kelasTeks}">${kategori.label[this.bahasa]}</span>
+        class="kategori-tab w-full px-2 py-2.5 flex items-center justify-center text-center rounded-lg ${aktif ? 'is-aktif' : 'hover:bg-stone-50'}">
+        <span class="text-[12px] leading-tight transition-transform ${kelasTeks}">${kategori.label[this.bahasa]}</span>
       </button>`
   }
 
@@ -931,12 +1072,21 @@ class KioskApp {
       wadahKategori.innerHTML = this.daftarKategori.map(kat => this.buatHTMLKategori(kat)).join('')
     }
 
+    // Reveal hanya diputar saat layar baru dibuka atau kategori diganti. Kalau
+    // tidak, setiap kali jumlah di keranjang bertambah semua card akan
+    // mengulang animasi dari awal dan terasa berat (lag).
+    const baruMuncul = this.layarBaruTadi || this.kategoriAktif !== this.kategoriAktifRendered
+    this.kategoriAktifRendered = this.kategoriAktif
+
     const wadahMenu = el.querySelector('[data-list="menuTampil"]')
     if (wadahMenu) {
       const itemMenu = this.dapatkanMenuTampil()
-      wadahMenu.innerHTML = itemMenu.map((item, i) =>
-        this.buatHTMLItemMenu(item).replace('reveal-card', `reveal-card stagger-${(i % 12) + 1}`)
-      ).join('')
+      wadahMenu.innerHTML = itemMenu.map((item, i) => {
+        const html = this.buatHTMLItemMenu(item)
+        return baruMuncul
+          ? html.replace('reveal-card', `reveal-card stagger-${(i % 12) + 1}`)
+          : html.replace('reveal-card', 'reveal-card-off')
+      }).join('')
     }
 
     const statusEl = el.querySelector('[data-bind="statusPesanan"]')
@@ -1063,16 +1213,8 @@ class KioskApp {
       }
     }
 
-    const waitingEl = el.querySelector('[data-bind="qrisStatusWaiting"]')
-    const splashEl = el.querySelector('[data-bind="qrisSuccessSplash"]')
-
-    if (this.statusQris === 'sukses') {
-      if (waitingEl) waitingEl.style.display = 'none'
-      if (splashEl) splashEl.style.display = ''
-    } else {
-      if (waitingEl) waitingEl.style.display = ''
-      if (splashEl) splashEl.style.display = 'none'
-    }
+    // Countdown batas waktu + pil status menunggu
+    this.perbaruiCountdownQris()
   }
 
   /** Render layar sukses */

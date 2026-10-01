@@ -74,31 +74,14 @@ const templateLayarQris = `
         <span class="text-xs font-bold" data-bind="qrisStatusText">Menunggu Pembayaran...</span>
       </div>
 
-    </div>
-
-    <!-- 3. Splash Overlay Animasi Sukses (Disembunyikan secara default) -->
-    <div data-bind="qrisSuccessSplash" style="display:none"
-      class="absolute inset-0 bg-black/75 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6 text-white text-center">
-      
-      <div class="w-24 h-24 rounded-full bg-emerald-500 text-white flex items-center justify-center mb-4 shadow-2xl animate__animated animate__bounceIn">
-        <i class="fa-solid fa-check text-5xl"></i>
-      </div>
-
-      <h2 class="text-2xl sm:text-3xl font-black text-white mb-2 animate__animated animate__fadeInUp">
-        Pembayaran Berhasil!
-      </h2>
-      <p class="text-sm text-emerald-200 font-medium animate__animated animate__fadeInUp">
-        Transaksi via Danu sukses dikonfirmasi
+      <!-- Sisa waktu sebelum kembali ke halaman metode pembayaran -->
+      <p class="text-[11px] text-stone-500 font-medium">
+        Sisa waktu <span data-bind="qrisCountdown" class="tabular-nums font-bold text-stone-600">3:00</span>
       </p>
 
-      <div class="mt-6 flex items-center gap-2 text-xs text-stone-300 font-bold">
-        <i class="fa-solid fa-circle-notch fa-spin text-emerald-400"></i>
-        <span>Mencetak struk pesanan...</span>
-      </div>
-
     </div>
 
-    <!-- 4. Tombol Batal / Kembali -->
+    <!-- 3. Tombol Batal / Kembali -->
     <div class="w-full flex justify-center pt-1 pb-2 shrink-0">
       <button data-action="navigasiKe:pembayaran"
         class="h-11 px-7 rounded-2xl bg-white hover:bg-stone-50 active:scale-[0.98] transition border border-stone-200 shadow-xs flex items-center justify-center gap-2.5">

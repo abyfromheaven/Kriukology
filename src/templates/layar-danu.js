@@ -10,10 +10,10 @@
  */
 
 const templateLayarDanu = `
-<div data-screen="danu" class="h-full w-full flex flex-col bg-white relative overflow-hidden font-sans">
+<div data-screen="danu" class="w-full flex-1 flex flex-col bg-white relative overflow-hidden font-sans">
 
   <!-- ── TAMPILAN 1: FORM PEMBAYARAN DANU ───────────────────────────── -->
-  <div data-danu-view="form" class="h-full w-full flex flex-col bg-white">
+  <div data-danu-view="form" class="w-full flex-1 flex flex-col bg-white">
     
     <!-- 1. Header Navigation Bar (Danu Protection & Pay) -->
     <header class="shrink-0 bg-white border-b border-stone-100 px-4 py-3.5 flex items-center justify-between shadow-xs">
@@ -117,7 +117,7 @@ const templateLayarDanu = `
   </div>
 
   <!-- ── TAMPILAN 2: HALAMAN SUKSES DANU (BACKGROUND BIRU FULLSCREEN) ──── -->
-  <div data-danu-view="sukses" style="display:none" class="h-full w-full bg-[#108ee9] text-white flex flex-col items-center justify-between p-8 text-center animate__animated animate__fadeIn">
+  <div data-danu-view="sukses" style="display:none" class="w-full flex-1 bg-[#108ee9] text-white flex flex-col items-center justify-between p-8 text-center animate__animated animate__fadeIn">
 
     <!-- Header Logo Danu -->
     <div class="pt-6 flex flex-col items-center gap-2">
@@ -148,6 +148,9 @@ const templateLayarDanu = `
         <i class="fa-solid fa-wifi text-emerald-300"></i>
         <span>Sinyal terikirim ke Kiosk Kriukology</span>
       </div>
+
+      <!-- Catatan kalau laporan ke kiosk bermasalah (diisi dari JS) -->
+      <p data-bind="danuSuksesCatatan" class="hidden text-xs font-bold text-amber-200 leading-snug max-w-xs"></p>
     </div>
 
     <!-- Tombol Selesai -->

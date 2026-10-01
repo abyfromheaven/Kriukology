@@ -34,11 +34,55 @@ button { cursor: pointer; }
 .brand-logo { width: 120px; height: 54px; object-fit: contain; }
 .brand-banner { width: 210px; height: 58px; object-fit: contain; }
 .cms-frame h1 { margin: 8px 0 18px; text-align: center; font-size: clamp(28px, 3.2vw, 38px); font-weight: 450; line-height: 1.15; }
-.cms-heading { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; margin: 8px 0 18px; }
-.cms-heading h1 { margin: 0; }
-.manage-category-button { height: 40px; display: flex; align-items: center; gap: 9px; padding: 0 16px; border: 2px solid #242424; border-radius: 10px; background: #fff; color: #242424; font-size: 16px; }
-.manage-category-button:hover { background: #f4f4f4; }
-.manage-category-button i { font-size: 15px; }
+/* Tab navigasi: teks biasa, bisa diklik. Latar merah SOLID di belakang tab
+   aktif, dan dipindah dengan animasi (lihat .cms-tab-indikator). */
+.cms-tabs { position: relative; display: flex; align-items: center; justify-content: center; gap: 10px; margin: 10px 0 18px; }
+.cms-tab { position: relative; z-index: 1; border: 0; border-radius: 999px; padding: 10px 24px; background: transparent; color: #272727; font-size: clamp(22px, 2.6vw, 32px); font-weight: 450; line-height: 1.15; transition: color .25s ease; }
+.cms-tab.is-aktif { color: #fff; }
+
+/* Indikator merah yang meluncur ke tab aktif */
+.cms-tab-indikator { position: absolute; z-index: 0; left: 0; top: 0; height: 100%; border-radius: 999px; background: #e92f33; width: 0; pointer-events: none; }
+.cms-tab-indikator.is-geser { transition: width .34s cubic-bezier(.32, .72, 0, 1), transform .34s cubic-bezier(.32, .72, 0, 1); }
+
+
+/* ── Reveal card: muncul bertahap saat halaman dibuka / ganti tab ──────── */
+.reveal { opacity: 0; animation: card-reveal .42s cubic-bezier(.22, .68, .36, 1) forwards; }
+@keyframes card-reveal {
+  from { opacity: 0; transform: translateY(16px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.stagger-1  { animation-delay: .00s; }
+.stagger-2  { animation-delay: .05s; }
+.stagger-3  { animation-delay: .10s; }
+.stagger-4  { animation-delay: .15s; }
+.stagger-5  { animation-delay: .20s; }
+.stagger-6  { animation-delay: .25s; }
+.stagger-7  { animation-delay: .30s; }
+.stagger-8  { animation-delay: .35s; }
+.stagger-9  { animation-delay: .40s; }
+.stagger-10 { animation-delay: .45s; }
+
+/* ── Card media: thumbnail memanjang, nama pendek ────────────────────── */
+/* Nama media biasanya singkat, jadi ruang sisa dipakai buat memperbesar
+   thumbnail setinggi mungkin (rasio 3:4, Richie sama poster/menu). */
+/* Tinggi tetap supaya semua card sama tinggi dan thumbnail menyerap
+   seluruh ruang sisa setelah nama. */
+.media-card { height: 470px; min-height: 0; }
+.media-thumb { position: relative; display: block; width: 100%; flex: 1 1 auto; min-height: 0; overflow: hidden; background: #f1f1f1; }
+.media-thumb img,
+.media-thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Tombol play di tengah thumbnail (hanya video) */
+.media-thumb i { position: absolute; inset: 0; margin: auto; width: 52px; height: 52px; display: grid; place-items: center; border-radius: 999px; background: #00000066; color: #fff; font-size: 18px; }
+
+.media-nama { flex: 0 0 auto; margin-top: 10px; font-size: clamp(19px, 2vw, 24px); line-height: 1.2; overflow-wrap: anywhere; }
+
+/* Ikon jenis (gambar/video) — kecil, di pojok, dan tembus klik supaya
+   tidak menghalangi thumbnail. */
+.media-jenis { position: absolute; z-index: 2; top: 9px; right: 9px; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 999px; background: #ffffffcc; color: #272727; font-size: 12px; pointer-events: none; }
+
+.media-preview { width: 100%; max-height: 260px; object-fit: contain; background: #000; }
 .cms-controls { display: grid; grid-template-columns: minmax(200px, 1fr) 190px 185px; gap: 12px; margin: 0 2px 20px; }
 .search-box, .category-filter { height: 44px; border: 2px solid #242424; border-radius: 11px; display: flex; align-items: center; }
 .search-box { padding: 0 12px; gap: 10px; color: #9299a3; }
@@ -49,7 +93,7 @@ button { cursor: pointer; }
 .category-filter select { width: 100%; height: 100%; border: 0; outline: 0; background: transparent; appearance: none; text-align: center; font-size: 18px; color: #252525; cursor: pointer; }
 .category-filter i { position: absolute; right: 12px; pointer-events: none; font-size: 13px; }
 .add-product-button { height: 44px; display: flex; align-items: center; justify-content: center; gap: 10px; border: 0; border-radius: 10px; padding: 0 14px; background: #e92f33; color: #fff; font-size: 18px; }
-.add-product-button:hover, .save-button:hover, .confirm-continue:hover { background: #d92228; }
+.add-product-button:hover, .save-button:hover { background: #d92228; }
 .add-product-button i { font-size: 20px; }
 .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(200px, 13vw, 300px), 1fr)); gap: 14px 18px; }
 .product-card { position: relative; min-width: 0; min-height: 310px; padding: 6px 10px 8px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; overflow: hidden; border: 0; border-radius: 27px; background: #fff; color: #282828; box-shadow: 0 2px 8px #0002, 0 0 0 1px #00000012; text-align: center; transition: box-shadow .18s ease, transform .18s ease; }
@@ -81,10 +125,41 @@ button { cursor: pointer; }
 .category-field select { width: auto; max-width: 100%; border: 0; outline: 0; background: transparent; padding: 0 24px 0 4px; text-align: center; font-size: 28px; color: #252525; appearance: none; cursor: pointer; }
 .category-field > i { position: absolute; top: 13px; margin-left: -20px; font-size: 13px; pointer-events: none; }
 .category-field select.is-placeholder { color: #888; }
-.name-field { display: flex; align-items: flex-start; justify-content: center; margin-bottom: 28px; }
-.name-field input, .price-field input { width: 100%; min-width: 0; padding: 0 26px 0 0; border: 0; outline: 0; background: transparent; text-align: center; color: #242424; font-size: clamp(32px, 7vw, 54px); line-height: 1.08; }
-.name-field input::placeholder, .price-field input::placeholder { color: #888; opacity: 1; }
-.editable-field > i { position: absolute; right: 0; top: 10px; font-size: 14px; color: #222; pointer-events: none; }
+/* ── Baris field di panel ────────────────────────────────────────────── */
+/* Isi baris: teks atau input, ditambah ikon pensil di sebelahnya.
+   Ikon ikut mengikuti tinggi teks, jadi kalau nama panjang dan wrap ke
+   dua baris, pensil ikut turun mengikuti teksnya. */
+.panel-baris { width: 100%; margin-bottom: 20px; }
+.panel-baris-isi { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.panel-baris.has-error { margin-bottom: 20px; }
+
+.panel-teks { flex: 1 1 auto; min-width: 0; text-align: center; color: #242424; font-size: clamp(28px, 6vw, 46px); line-height: 1.1; overflow-wrap: anywhere; word-break: break-word; white-space: normal; }
+.panel-teks[data-field="name"] { font-weight: 700; }
+.panel-teks[data-field="price"] { font-weight: 900; font-variant-numeric: tabular-nums; }
+.panel-teks:empty::before { content: '—'; color: #aaa; }
+
+.panel-input { flex: 1 1 auto; min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; text-align: center; color: #242424; font-size: clamp(28px, 6vw, 46px); line-height: 1.1; }
+.panel-input::placeholder { color: #888; opacity: 1; }
+
+.panel-pencil { flex: 0 0 auto; width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: #6b6b6b; font-size: 14px; transition: background-color .18s ease, color .18s ease; }
+.panel-pencil:hover { background: #f0f0f0; color: #e92f33; }
+.panel-pencil:active { transform: scale(.92); }
+
+.panel-petunjuk { margin: 2px 0 16px; text-align: center; color: #8a8a8a; font-size: 12px; line-height: 1.4; }
+
+/* ── Dropdown kategori di dalam panel (gaya sama dgn filter search) ──── */
+.kategori-wrap { position: relative; flex: 1 1 auto; min-width: 0; }
+.kategori-trigger { width: 100%; min-height: 46px; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 2px solid #242424; border-radius: 12px; background: #fff; color: #242424; font-size: 17px; text-align: left; transition: background-color .18s ease; }
+.kategori-trigger:hover { background: #f7f7f7; }
+.kategori-trigger:not(.terisi) { color: #8a8a8a; }
+.kategori-trigger i { font-size: 12px; flex: 0 0 auto; }
+.kategori-trigger.dibuka { border-color: #e92f33; }
+
+.kategori-menu { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 6px); max-height: 230px; overflow-y: auto; padding: 6px; border: 2px solid #242424; border-radius: 12px; background: #fff; box-shadow: 0 14px 30px #0002; }
+.kategori-option { width: 100%; padding: 11px 13px; border: 0; border-radius: 8px; background: transparent; color: #272727; font-size: 16px; text-align: left; }
+.kategori-option:hover { background: #f3f3f3; }
+.kategori-option.dipilih { background: #e92f331a; color: #e92f33; font-weight: 700; }
+
 .price-field { width: 100%; margin-top: 3px; text-align: center; }
 .price-field > label, .stock-field > label { display: block; font-size: 34px; line-height: 1.15; }
 .price-field .editable-field { margin: 0 auto 22px; display: flex; align-items: center; justify-content: center; }
@@ -127,19 +202,28 @@ button { cursor: pointer; }
 .cat-usage { margin: 4px 0 14px; text-align: center; color: #6b6b6b; font-size: 14px; line-height: 1.45; }
 .cat-error-banner { margin: 0 0 16px; padding: 11px 14px; border: 2px solid #e92f33; border-radius: 10px; background: #fff3f3; color: #c01f24; font-size: 14px; line-height: 1.45; text-align: left; }
 
-.confirm-backdrop { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 18px; background: #0003; }
-.confirm-modal { width: min(640px, 100%); min-height: 235px; padding: 32px 46px 40px; border: 3px solid #272727; border-radius: 30px; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
-.confirm-modal p { margin: 4px 0 28px; text-align: center; font-size: clamp(24px, 4vw, 36px); line-height: 1.2; }
-.confirm-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: min(14vw, 94px); }
-.confirm-actions button { height: 60px; border-radius: 13px; font-size: 26px; }
-.confirm-cancel { border: 2px solid #e92f33; background: #fff; color: #e92f33; }
-.confirm-continue { border: 0; background: #e92f33; color: #fff; }
+/* ── Modal konfirmasi ────────────────────────────────────────────────── */
+/* Gaya disamakan dengan modal konfirmasi metode pembayaran di kiosk:
+   kartu putih, judul besar, tombol kiri outline merah, kanan merah solid. */
+.modal-backdrop { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 18px; background: #00000059; }
+.modal-kartu { width: min(560px, 100%); padding: 34px 40px 30px; border-radius: 28px; background: #fff; box-shadow: 0 24px 60px #0004; display: flex; flex-direction: column; align-items: center; animation: modal-masuk .26s ease-out both; }
+@keyframes modal-masuk { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: scale(1); } }
+.modal-judul { margin: 0; text-align: center; color: #231f20; font-size: clamp(20px, 2.6vw, 28px); font-weight: 900; letter-spacing: .04em; line-height: 1.2; }
+.modal-pesan { margin: 18px 0 26px; text-align: center; color: #231f20; font-size: clamp(15px, 1.9vw, 18px); font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; }
+.modal-aksi { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.modal-aksi button { min-height: 54px; padding: 10px 14px; border-radius: 12px; font-size: clamp(14px, 1.7vw, 17px); font-weight: 700; transition: transform .12s ease, background-color .18s ease; }
+.modal-aksi button:active { transform: scale(.97); }
+.modal-kiri { border: 2px solid #e92f33; background: #fff; color: #e92f33; }
+.modal-kiri:hover { background: #e92f330f; }
+.modal-kanan { border: 0; background: #e92f33; color: #fff; }
+.modal-kanan:hover { background: #d92228; }
 
 @media (max-width: 800px) {
   .cms-controls { grid-template-columns: minmax(150px, 1fr) 155px; }
   .add-product-button { grid-column: 1 / -1; }
   .product-grid { gap: 13px; }
   .product-card { min-height: 280px; }
+  .media-card { height: 400px; }
   .product-image { height: 155px; }
   .stripe-band { height: 40px; }
   .brand-space { width: min(270px, 52vw); }
@@ -174,9 +258,10 @@ button { cursor: pointer; }
   .stock-step { width: 46px; height: 46px; flex-basis: 46px; }
   .panel-actions { gap: 12px; }
   .delete-button, .save-button { min-height: 48px; font-size: 18px; }
-  .confirm-modal { min-height: 190px; padding: 24px 20px 28px; border-radius: 24px; }
-  .confirm-actions { gap: 14px; }
-  .confirm-actions button { height: 52px; font-size: 21px; }
+  .modal-kartu { padding: 26px 22px 22px; border-radius: 24px; }
+  .modal-pesan { margin: 14px 0 20px; }
+  .modal-aksi { gap: 12px; }
+  .modal-aksi button { min-height: 48px; font-size: 15px; }
 }
 
 /* Revisi visual halaman CMS */

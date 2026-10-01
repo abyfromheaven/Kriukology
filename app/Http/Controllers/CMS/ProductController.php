@@ -84,19 +84,11 @@ class ProductController extends Controller
     }
 
     // API: Hapus produk
+    // Produk yang pernah dipesan juga boleh dihapus — rincian pesanan ikut
+    // terhapus lewat FK cascade (lihat migrasi relaxasi order_details).
     public function destroy($id): JsonResponse
     {
-        $product = Product::withCount('orderDetails')->findOrFail($id);
-
-        // Produk yang sudah pernah dipesan tidak boleh dihapus — order_details
-        // memakai FK restrict. Kasih pesan jelas, bukan error SQL mentah.
-        if ($product->order_details_count > 0) {
-            return response()->json([
-                'success' => false,
-                'message' => "Produk \"{$product->name}\" sudah pernah dipesan dan tidak bisa dihapus. Set stoknya jadi 0 untuk menyembunyikannya dari kiosk.",
-            ], 422);
-        }
-
+        $product = Product::findOrFail($id);
         $product->delete();
 
         return response()->json([

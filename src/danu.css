@@ -1,0 +1,100 @@
+/**
+ * ==========================================================================
+ * STYLES KHUSUS DANU (MOBILE ONLY)
+ * ==========================================================================
+ * Halaman Danu ini dibuka di HP pelanggan, jadi TIDAK memakai
+ * style.css kiosk (yang berorientasi desktop: frame 920px, warna cream,
+ * layout untuk layar sentuh besar).
+ *
+ * Yang dipakai di sini:
+ *  - 100dvh supaya ikut mengikuti tinggi viewport di HP yang browser bar-nya
+ *    bisa muncul/hilang (100vh sering meleset di HP)
+ *  - safe-area padding supaya tidak tertutup notch / gesture bar
+ *  - di layar lebar (desktop/laptop) ditampilkan sebagai bingkai seukuran HP
+ *    beserta pemberitahuan, karena halaman ini khusus perangkat mobile
+ * ==========================================================================
+ */
+
+@import 'animate.css';
+@import '@fortawesome/fontawesome-free/css/all.min.css';
+
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../Geist/Geist-VariableFont_wght.ttf') format('truetype');
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  /* Cegah browser HP melakukan auto-zoom saat fokus input */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  /* Isi penuh layar HP, ikut notch & gesture bar */
+  min-height: 100dvh;
+  font-family: var(--font-sans);
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#app-danu {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* MPrevent elemen dalam meluber keluar layar HP */
+#app-danu * {
+  min-width: 0;
+}
+
+/* ── Desktop / tablet: bingkai seukuran HP + pemberitahuan ───────────── */
+.pesan-bukan-hp {
+  display: none;
+}
+
+@media (min-width: 620px) {
+  body {
+    background: #f4f4f5;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+  }
+
+  /* Bingkai HP: 390 x 844 (ukuran iPhone 14) */
+  #app-danu {
+    width: 390px;
+    height: 844px;
+    min-height: 844px;
+    max-height: calc(100dvh - 48px);
+    border-radius: 34px;
+    overflow: hidden;
+    box-shadow: 0 24px 70px #0003, 0 0 0 10px #1c1c1e;
+  }
+
+  .pesan-bukan-hp {
+    display: flex;
+    position: fixed;
+    inset: auto 0 0 0;
+    padding: 14px 20px 18px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}

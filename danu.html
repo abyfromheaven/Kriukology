@@ -1,14 +1,17 @@
 <!doctype html>
-<html lang="id" class="h-full w-full">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!-- Mobile-only: pakai 100dvh lewat CSS. user-scalable sengaja TIDAK
+         dikunci supaya pengguna tetap bisa memperbesar tampilan. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#108ee9" />
     <title>Danu — Simulasi Pembayaran DANA</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="any">
   </head>
-  <body class="h-full w-full bg-white overflow-hidden">
-    <main id="app-danu" class="h-full w-full relative flex flex-col bg-white overflow-hidden"></main>
+  <body>
+    <main id="app-danu"></main>
+    <p class="pesan-bukan-hp">Halaman ini khusus untuk perangkat mobile. Silakan buka tautan ini di HP.</p>
     <script type="module" src="/src/danu-main.js"></script>
   </body>
 </html>
